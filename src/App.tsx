@@ -1,0 +1,281 @@
+import { useMemo, useState } from 'react';
+import {
+  AlertTriangle,
+  ArrowRight,
+  Bell,
+  BriefcaseBusiness,
+  CalendarDays,
+  Check,
+  ChevronDown,
+  CircleDollarSign,
+  ClipboardList,
+  Clock3,
+  FileCheck2,
+  FilePlus2,
+  FileStack,
+  FolderKanban,
+  Gauge,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Search,
+  Settings,
+  ShieldCheck,
+  SlidersHorizontal,
+  UserRound,
+  UsersRound,
+  Wrench,
+  X,
+  Zap,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+
+type NavItem = { label: string; icon: LucideIcon };
+type PracticeStatus = 'Nuova' | 'In lavorazione' | 'Completata' | 'Annullata';
+
+type Practice = {
+  protocol: string;
+  client: string;
+  taxCode: string;
+  service: string;
+  office: string;
+  operator: string;
+  status: PracticeStatus;
+  priority: 'Urgente' | 'Normale';
+  deadline: string;
+  overdue?: boolean;
+};
+
+const navGroups: { label: string; items: NavItem[] }[] = [
+  {
+    label: 'Operatività',
+    items: [
+      { label: 'Dashboard', icon: LayoutDashboard },
+      { label: 'Nuova Pratica', icon: FilePlus2 },
+      { label: 'Tutte le Pratiche', icon: ClipboardList },
+      { label: 'Il Mio Lavoro', icon: BriefcaseBusiness },
+    ],
+  },
+  {
+    label: 'Organizzazione',
+    items: [
+      { label: 'Uffici CAF', icon: FolderKanban },
+      { label: 'Clienti', icon: UsersRound },
+      { label: 'Utenti e Ruoli', icon: ShieldCheck },
+      { label: 'Servizi e Prezzi', icon: Wrench },
+      { label: 'Gestione Crediti', icon: CircleDollarSign },
+    ],
+  },
+  {
+    label: 'Controllo',
+    items: [
+      { label: 'Agenda', icon: CalendarDays },
+      { label: 'Statistiche', icon: Gauge },
+      { label: 'Impostazioni', icon: Settings },
+    ],
+  },
+];
+
+const statistics = [
+  { label: 'Pratiche Totali', value: '16', icon: FileStack, tone: 'blue' },
+  { label: 'Nuove', value: '10', icon: FileCheck2, tone: 'cyan' },
+  { label: 'In Lavorazione', value: '1', icon: Clock3, tone: 'amber' },
+  { label: 'In Attesa Doc.', value: '0', icon: FilePlus2, tone: 'orange' },
+  { label: 'Inviata / Attesa Esito', value: '0', icon: Zap, tone: 'violet' },
+  { label: 'Completate', value: '2', icon: Check, tone: 'green' },
+  { label: 'Scadute', value: '10', icon: AlertTriangle, tone: 'red' },
+];
+
+const practices: Practice[] = [
+  {
+    protocol: 'PRAT-1016',
+    client: 'Niaj Mohahbd',
+    taxCode: 'MHNMNJ97L25Z249F',
+    service: 'Prenotazione Appuntamenti Questura / Prefettura',
+    office: 'CAF Roma Eur',
+    operator: '—',
+    status: 'Nuova',
+    priority: 'Urgente',
+    deadline: '29 ott 2026',
+    overdue: true,
+  },
+  {
+    protocol: 'PRAT-1015',
+    client: 'Md Shawon Ahmed',
+    taxCode: 'HJJKGHYUUUJH',
+    service: 'Assegno Unico e Universale (AUU)',
+    office: 'CAF Roma Eur',
+    operator: '—',
+    status: 'Completata',
+    priority: 'Normale',
+    deadline: '03 nov 2026',
+  },
+  {
+    protocol: 'PRAT-1014',
+    client: 'Md Shawon Ahmed',
+    taxCode: 'HJJKGHYUUUJH',
+    service: 'Assegno Unico e Universale (AUU)',
+    office: 'CAF Roma Eur',
+    operator: '—',
+    status: 'Annullata',
+    priority: 'Normale',
+    deadline: '11 ott 2026',
+  },
+  {
+    protocol: 'PRAT-1013',
+    client: 'Md Shawon Ahmed',
+    taxCode: 'HJJKGHYUUUJH',
+    service: 'Pagamenti PagoPA e Bollettini',
+    office: 'CAF Roma Eur',
+    operator: '—',
+    status: 'Annullata',
+    priority: 'Normale',
+    deadline: '15 nov 2026',
+  },
+  {
+    protocol: 'PRAT-1012',
+    client: 'Md Shawon Ahmed',
+    taxCode: 'HJJKGHYUUUJH',
+    service: 'Pagamenti PagoPA e Bollettini',
+    office: 'CAF Roma Eur',
+    operator: '—',
+    status: 'Nuova',
+    priority: 'Normale',
+    deadline: '15 nov 2026',
+  },
+];
+
+const toneStyles: Record<string, string> = {
+  blue: 'bg-blue-50 text-blue-600',
+  slate: 'bg-slate-100 text-slate-600',
+  cyan: 'bg-cyan-50 text-cyan-600',
+  amber: 'bg-amber-50 text-amber-600',
+  orange: 'bg-orange-50 text-orange-600',
+  violet: 'bg-sky-50 text-sky-600',
+  green: 'bg-emerald-50 text-emerald-600',
+  red: 'bg-red-50 text-red-600',
+};
+
+function App() {
+  const [activePage, setActivePage] = useState('Dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCompact, setSidebarCompact] = useState(false);
+
+  const activeSubtitle = useMemo(() => {
+    if (activePage === 'Dashboard') return 'Panoramica di sistema';
+    return 'Sezione in preparazione';
+  }, [activePage]);
+
+  const selectPage = (page: string) => {
+    setActivePage(page);
+    setSidebarOpen(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-[#f5f7fa] text-slate-900">
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 flex w-[264px] flex-col bg-[#101a2e] text-slate-300 transition-transform duration-300 lg:translate-x-0 ${sidebarCompact ? 'lg:w-[84px]' : ''} ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      >
+        <div className={`flex h-[76px] items-center border-b border-white/10 px-5 ${sidebarCompact ? 'lg:justify-center lg:px-0' : 'justify-between'}`}>
+          <div className={`flex items-center gap-3 ${sidebarCompact ? 'lg:hidden' : ''}`}>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-sm font-bold text-white shadow-lg shadow-blue-950/30">CP</div>
+            <div>
+              <p className="text-[15px] font-semibold tracking-tight text-white">CAF &amp; Patronato</p>
+              <p className="mt-0.5 text-[11px] text-slate-400">Gestione Pratiche</p>
+            </div>
+          </div>
+          <div className={`${sidebarCompact ? 'hidden' : 'hidden lg:block'}`}>
+            <button onClick={() => setSidebarCompact(true)} aria-label="Riduci menu" className="rounded-lg p-2 text-slate-500 transition hover:bg-white/10 hover:text-white"><PanelLeftClose size={17} /></button>
+          </div>
+          <button onClick={() => setSidebarOpen(false)} aria-label="Chiudi menu" className="rounded-lg p-2 text-slate-400 hover:bg-white/10 lg:hidden"><X size={18} /></button>
+          {sidebarCompact && <button onClick={() => setSidebarCompact(false)} aria-label="Espandi menu" className="hidden rounded-lg p-2 text-slate-400 hover:bg-white/10 lg:block"><PanelLeftOpen size={18} /></button>}
+        </div>
+
+        <nav className="flex-1 overflow-y-auto px-3 py-5">
+          {navGroups.map((group) => (
+            <div key={group.label} className="mb-6">
+              <p className={`mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 ${sidebarCompact ? 'lg:hidden' : ''}`}>{group.label}</p>
+              {group.items.map(({ label, icon: Icon }) => (
+                <button
+                  key={label}
+                  onClick={() => selectPage(label)}
+                  title={sidebarCompact ? label : undefined}
+                  className={`group mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[13px] font-medium transition ${activePage === label ? 'bg-blue-600 text-white shadow-lg shadow-blue-950/20' : 'text-slate-300 hover:bg-white/[0.07] hover:text-white'} ${sidebarCompact ? 'lg:justify-center lg:px-0' : ''}`}
+                >
+                  <Icon size={17} strokeWidth={activePage === label ? 2.4 : 1.8} />
+                  <span className={sidebarCompact ? 'lg:hidden' : ''}>{label}</span>
+                  {activePage === label && !sidebarCompact && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-white" />}
+                </button>
+              ))}
+            </div>
+          ))}
+          <div className="border-t border-white/10 pt-5">
+            <button onClick={() => selectPage('Notifiche')} className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[13px] font-medium transition ${activePage === 'Notifiche' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-white/[0.07] hover:text-white'} ${sidebarCompact ? 'lg:justify-center lg:px-0' : ''}`}>
+              <Bell size={17} strokeWidth={1.8} /><span className={sidebarCompact ? 'lg:hidden' : ''}>Notifiche</span><span className={`ml-auto rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white ${sidebarCompact ? 'lg:hidden' : ''}`}>9</span>
+            </button>
+            <button onClick={() => selectPage('Profilo')} className={`mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[13px] font-medium transition ${activePage === 'Profilo' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-white/[0.07] hover:text-white'} ${sidebarCompact ? 'lg:justify-center lg:px-0' : ''}`}>
+              <UserRound size={17} strokeWidth={1.8} /><span className={sidebarCompact ? 'lg:hidden' : ''}>Profilo</span>
+            </button>
+          </div>
+        </nav>
+
+        <div className={`border-t border-white/10 p-4 ${sidebarCompact ? 'lg:px-3' : ''}`}>
+          <div className={`flex items-center gap-3 ${sidebarCompact ? 'lg:justify-center' : ''}`}>
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-700 text-[11px] font-bold text-white ring-2 ring-slate-600">MS</div>
+            <div className={sidebarCompact ? 'lg:hidden' : ''}><p className="truncate text-xs font-semibold text-white">Md Shawon Ahmed</p><p className="mt-0.5 text-[10px] text-slate-400">Amministratore Principale</p></div>
+          </div>
+          <button className={`mt-4 flex items-center gap-3 px-1 text-xs font-medium text-slate-400 transition hover:text-white ${sidebarCompact ? 'lg:mx-auto' : ''}`}><LogOut size={16} /><span className={sidebarCompact ? 'lg:hidden' : ''}>Esci</span></button>
+        </div>
+      </aside>
+
+      {sidebarOpen && <button aria-label="Chiudi menu" onClick={() => setSidebarOpen(false)} className="fixed inset-0 z-30 bg-slate-950/40 lg:hidden" />}
+
+      <div className={`transition-[padding] duration-300 ${sidebarCompact ? 'lg:pl-[84px]' : 'lg:pl-[264px]'}`}>
+        <header className="sticky top-0 z-20 flex h-[76px] items-center justify-between border-b border-slate-200 bg-white/95 px-5 backdrop-blur md:px-8">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setSidebarOpen(true)} aria-label="Apri menu" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:hidden"><Menu size={20} /></button>
+            <div><p className="hidden text-[11px] font-medium text-slate-400 sm:block">Amministratore Principale</p><p className="text-sm font-semibold text-slate-900">{activePage === 'Dashboard' ? 'Pannello di Controllo' : activePage}</p></div>
+          </div>
+          <div className="flex items-center gap-4 md:gap-6">
+            <button aria-label="Cerca" className="hidden rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 sm:block"><Search size={18} /></button>
+            <button aria-label="Notifiche" className="relative rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"><Bell size={19} /><span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">9</span></button>
+            <div className="hidden h-8 w-px bg-slate-200 sm:block" />
+            <div className="flex items-center gap-2.5"><div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#101a2e] text-[11px] font-bold text-white">MS</div><div className="hidden lg:block"><p className="text-xs font-semibold text-slate-800">Md Shawon Ahmed</p><p className="mt-0.5 text-[10px] text-slate-400">shawon.soluzionecentro@gmail.com</p></div><ChevronDown size={15} className="hidden text-slate-400 lg:block" /></div>
+          </div>
+        </header>
+
+        <main className="mx-auto max-w-[1440px] p-5 md:p-8">
+          <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+            <div><div className="mb-2 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-blue-600"><SlidersHorizontal size={13} /> Area amministrativa</div><h1 className="text-2xl font-bold tracking-tight text-slate-950 md:text-[28px]">{activePage}</h1><p className="mt-1 text-sm text-slate-500">{activeSubtitle}</p></div>
+            <button className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-600/25"><FilePlus2 size={17} /> Nuova Pratica</button>
+          </div>
+
+          {activePage === 'Dashboard' ? <>
+            <section className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+              {statistics.map(({ label, value, icon: Icon, tone }) => <div key={label} className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"><div className="mb-4 flex items-start justify-between gap-2"><p className="min-h-8 text-[11px] font-medium leading-4 text-slate-500">{label}</p><span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${toneStyles[tone]}`}><Icon size={15} /></span></div><p className="text-[26px] font-semibold leading-none tracking-tight text-slate-950">{value}</p></div>)}
+            </section>
+
+            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="flex flex-col justify-between gap-3 border-b border-slate-100 px-5 py-5 sm:flex-row sm:items-center md:px-6"><div><h2 className="text-base font-semibold text-slate-950">Pratiche Recenti</h2><p className="mt-1 text-xs text-slate-400">Le ultime attività registrate nel sistema</p></div><button className="flex items-center gap-1 text-xs font-semibold text-blue-600 transition hover:text-blue-800">Vedi tutte <ArrowRight size={14} /></button></div>
+              <div className="overflow-x-auto"><table className="w-full min-w-[980px] text-left"><thead className="bg-slate-50/80"><tr className="border-b border-slate-100 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400"><th className="px-5 py-3.5 md:px-6">Protocollo</th><th className="px-4 py-3.5">Cliente</th><th className="px-4 py-3.5">Servizio</th><th className="px-4 py-3.5">Ufficio CAF</th><th className="px-4 py-3.5">Operatore</th><th className="px-4 py-3.5">Stato</th><th className="px-4 py-3.5">Priorità</th><th className="px-4 py-3.5">Scadenza</th></tr></thead><tbody className="divide-y divide-slate-100">{practices.map((practice) => <tr key={practice.protocol} className="group transition hover:bg-blue-50/30"><td className="px-5 py-4 md:px-6"><span className="text-xs font-bold text-slate-800">{practice.protocol}</span></td><td className="px-4 py-4"><p className="whitespace-nowrap text-xs font-medium capitalize text-slate-700">{practice.client}</p><p className="mt-1 text-[10px] text-slate-400">{practice.taxCode}</p></td><td className="max-w-[245px] px-4 py-4 text-xs leading-5 text-slate-600">{practice.service}</td><td className="px-4 py-4 text-xs text-slate-600">{practice.office}</td><td className="px-4 py-4 text-xs text-slate-500">{practice.operator}</td><td className="px-4 py-4"><StatusBadge status={practice.status} /></td><td className="px-4 py-4"><span className={`rounded-md px-2 py-1 text-[10px] font-semibold ${practice.priority === 'Urgente' ? 'bg-red-50 text-red-600 ring-1 ring-inset ring-red-100' : 'bg-slate-100 text-slate-500'}`}>{practice.priority}</span></td><td className={`whitespace-nowrap px-4 py-4 text-xs font-medium ${practice.overdue ? 'text-red-600' : 'text-slate-500'}`}>{practice.overdue && <AlertTriangle size={12} className="mr-1 inline" />}{practice.deadline}</td></tr>)}</tbody></table></div>
+              <div className="flex items-center justify-between border-t border-slate-100 px-5 py-4 md:px-6"><p className="text-xs text-slate-400">Visualizzate <span className="font-semibold text-slate-600">5</span> di <span className="font-semibold text-slate-600">16</span> pratiche</p><button className="text-xs font-semibold text-blue-600 hover:text-blue-800">Apri archivio completo</button></div>
+            </section>
+          </> : <PlaceholderPage page={activePage} />}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: PracticeStatus }) {
+  const styles: Record<PracticeStatus, string> = { Nuova: 'bg-blue-50 text-blue-600 ring-blue-100', 'In lavorazione': 'bg-amber-50 text-amber-700 ring-amber-100', Completata: 'bg-emerald-50 text-emerald-600 ring-emerald-100', Annullata: 'bg-slate-100 text-slate-500 ring-slate-200' };
+  return <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[10px] font-semibold ring-1 ring-inset ${styles[status]}`}><span className="h-1.5 w-1.5 rounded-full bg-current" />{status}</span>;
+}
+
+function PlaceholderPage({ page }: { page: string }) {
+  return <div className="flex min-h-[420px] items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white"><div className="max-w-sm px-6 text-center"><div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600"><Settings size={24} /></div><h2 className="text-lg font-semibold text-slate-900">{page}</h2><p className="mt-2 text-sm leading-6 text-slate-500">Questa sezione sarà disponibile nella prossima versione di CAFStream.</p></div></div>;
+}
+
+export default App;
