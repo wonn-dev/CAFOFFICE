@@ -9,6 +9,7 @@ import {
   Check,
   ChevronDown,
   CircleDollarSign,
+  Eye,
   ClipboardList,
   Clock3,
   FileCheck2,
@@ -20,6 +21,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MapPin,
   PanelLeftClose,
   PanelLeftOpen,
   Pencil,
@@ -54,6 +56,26 @@ type CafOffice = {
   created_at: string;
 };
 type OfficeForm = Omit<CafOffice, 'id' | 'created_at'>;
+type Client = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  tax_code: string;
+  email: string;
+  phone: string;
+  notes: string;
+  address: string;
+  street_number: string;
+  postal_code: string;
+  city: string;
+  province: string;
+  province_code: string;
+  region: string;
+  country: string;
+  office: string;
+  created_at: string;
+};
+type ClientForm = Omit<Client, 'id' | 'created_at'>;
 type StoredPractice = {
   id: string;
   protocol: string;
@@ -104,7 +126,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCompact, setSidebarCompact] = useState(false);
 
-  const activeSubtitle = useMemo(() => activePage === 'Dashboard' ? 'Panoramica di sistema' : activePage === 'Nuova Pratica' ? 'Invia una nuova pratica al team back-office.' : activePage === 'Uffici CAF' ? 'Gestisci le sedi CAF che collaborano con il tuo ufficio.' : 'Sezione in preparazione', [activePage]);
+  const activeSubtitle = useMemo(() => activePage === 'Dashboard' ? 'Panoramica di sistema' : activePage === 'Nuova Pratica' ? 'Invia una nuova pratica al team back-office.' : activePage === 'Uffici CAF' ? 'Gestisci le sedi CAF che collaborano con il tuo ufficio.' : activePage === 'Clienti' ? 'Gestisci i clienti e tutte le loro informazioni.' : 'Sezione in preparazione', [activePage]);
   const selectPage = (page: string) => { setActivePage(page); setSidebarOpen(false); };
 
   return (
@@ -125,10 +147,81 @@ function App() {
       {sidebarOpen && <button aria-label="Chiudi menu" onClick={() => setSidebarOpen(false)} className="fixed inset-0 z-30 bg-slate-950/40 lg:hidden" />}
       <div className={`transition-[padding] duration-300 ${sidebarCompact ? 'lg:pl-[84px]' : 'lg:pl-[264px]'}`}>
         <header className="sticky top-0 z-20 flex h-[76px] items-center justify-between border-b border-slate-200 bg-white/95 px-5 backdrop-blur md:px-8"><div className="flex items-center gap-3"><button onClick={() => setSidebarOpen(true)} aria-label="Apri menu" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:hidden"><Menu size={20} /></button><div><p className="hidden text-[11px] font-medium text-slate-400 sm:block">Amministratore Principale</p><p className="text-sm font-semibold text-slate-900">{activePage === 'Dashboard' ? 'Pannello di Controllo' : activePage}</p></div></div><div className="flex items-center gap-4 md:gap-6"><button aria-label="Cerca" className="hidden rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 sm:block"><Search size={18} /></button><button aria-label="Notifiche" className="relative rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"><Bell size={19} /><span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">9</span></button><div className="hidden h-8 w-px bg-slate-200 sm:block" /><div className="flex items-center gap-2.5"><div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#101a2e] text-[11px] font-bold text-white">MS</div><div className="hidden lg:block"><p className="text-xs font-semibold text-slate-800">Md Shawon Ahmed</p><p className="mt-0.5 text-[10px] text-slate-400">shawon.soluzionecentro@gmail.com</p></div><ChevronDown size={15} className="hidden text-slate-400 lg:block" /></div></div></header>
-        <main className="mx-auto max-w-[1440px] p-5 md:p-8"><div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><div className="mb-2 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-blue-600"><SlidersHorizontal size={13} /> Area amministrativa</div><h1 className="text-2xl font-bold tracking-tight text-slate-950 md:text-[28px]">{activePage}</h1><p className="mt-1 text-sm text-slate-500">{activeSubtitle}</p></div>{activePage === 'Dashboard' && <button onClick={() => selectPage('Nuova Pratica')} className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-600/25"><FilePlus2 size={17} /> Nuova Pratica</button>}</div>{activePage === 'Dashboard' ? <Dashboard /> : activePage === 'Nuova Pratica' ? <NewPractice /> : activePage === 'Tutte le Pratiche' ? <AllPractices /> : activePage === 'Uffici CAF' ? <CafOffices /> : <PlaceholderPage page={activePage} />}</main>
+        <main className="mx-auto max-w-[1440px] p-5 md:p-8"><div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><div className="mb-2 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-blue-600"><SlidersHorizontal size={13} /> Area amministrativa</div><h1 className="text-2xl font-bold tracking-tight text-slate-950 md:text-[28px]">{activePage}</h1><p className="mt-1 text-sm text-slate-500">{activeSubtitle}</p></div>{activePage === 'Dashboard' && <button onClick={() => selectPage('Nuova Pratica')} className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-600/25"><FilePlus2 size={17} /> Nuova Pratica</button>}</div>{activePage === 'Dashboard' ? <Dashboard /> : activePage === 'Nuova Pratica' ? <NewPractice /> : activePage === 'Tutte le Pratiche' ? <AllPractices /> : activePage === 'Uffici CAF' ? <CafOffices /> : activePage === 'Clienti' ? <Clients /> : <PlaceholderPage page={activePage} />}</main>
       </div>
     </div>
   );
+}
+
+function Clients() {
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [clientForm, setClientForm] = useState<ClientForm>({ first_name: '', last_name: '', tax_code: '', email: '', phone: '', notes: '', address: '', street_number: '', postal_code: '', city: '', province: '', province_code: '', region: '', country: 'Italia', office: '' });
+
+  useEffect(() => {
+    const loadClients = async () => {
+      const { data, error } = await supabase.from('clients').select('id, first_name, last_name, tax_code, email, phone, notes, address, street_number, postal_code, city, province, province_code, region, country, office, created_at').order('created_at', { ascending: false });
+      if (error) setErrorMessage('Non è stato possibile caricare i clienti.');
+      setClients((data as Client[]) ?? []);
+      setLoading(false);
+    };
+    void loadClients();
+  }, []);
+
+  const openNewClient = () => {
+    setEditingClient(null);
+    setClientForm({ first_name: '', last_name: '', tax_code: '', email: '', phone: '', notes: '', address: '', street_number: '', postal_code: '', city: '', province: '', province_code: '', region: '', country: 'Italia', office: '' });
+    setErrorMessage('');
+    setModalOpen(true);
+  };
+
+  const openEditClient = (client: Client) => {
+    setEditingClient(client);
+    setClientForm({ first_name: client.first_name, last_name: client.last_name, tax_code: client.tax_code, email: client.email, phone: client.phone, notes: client.notes, address: client.address, street_number: client.street_number, postal_code: client.postal_code, city: client.city, province: client.province, province_code: client.province_code, region: client.region, country: client.country, office: client.office });
+    setErrorMessage('');
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    if (!saving) setModalOpen(false);
+  };
+
+  const saveClient = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSaving(true);
+    setErrorMessage('');
+    if (editingClient) {
+      const { error } = await supabase.from('clients').update(clientForm).eq('id', editingClient.id);
+      if (error) setErrorMessage('Non è stato possibile aggiornare il cliente.');
+      else {
+        setClients((current) => current.map((client) => client.id === editingClient.id ? { ...client, ...clientForm } : client));
+        setModalOpen(false);
+      }
+    } else {
+      const { data, error } = await supabase.from('clients').insert(clientForm).select('id, first_name, last_name, tax_code, email, phone, notes, address, street_number, postal_code, city, province, province_code, region, country, office, created_at').maybeSingle();
+      if (error || !data) setErrorMessage('Non è stato possibile aggiungere il cliente.');
+      else {
+        setClients((current) => [data as Client, ...current]);
+        setModalOpen(false);
+      }
+    }
+    setSaving(false);
+  };
+
+  const removeClient = async (client: Client) => {
+    if (!window.confirm(`Eliminare ${client.first_name} ${client.last_name}?`)) return;
+    const { error } = await supabase.from('clients').delete().eq('id', client.id);
+    if (error) { setErrorMessage('Non è stato possibile eliminare il cliente.'); return; }
+    setClients((current) => current.filter((item) => item.id !== client.id));
+  };
+
+  const fullAddress = (client: Client) => [client.address, client.street_number, client.postal_code, client.city].filter(Boolean).join(', ') || '—';
+
+  return <section><div className="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><p className="text-sm text-slate-500"><span className="font-semibold text-slate-700">{clients.length} clienti</span> registrati nel sistema</p></div><button type="button" onClick={openNewClient} className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700"><Plus size={17} /> Nuovo Cliente</button></div>{errorMessage && <p role="alert" className="mb-4 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700">{errorMessage}</p>}{loading ? <div className="flex min-h-[260px] items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm text-slate-400">Caricamento clienti...</div> : <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm"><table className="w-full min-w-[1040px] text-left"><thead className="bg-slate-50/80"><tr className="border-b border-slate-100 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400"><th className="px-4 py-3.5 md:px-5">Nome</th><th className="px-4 py-3.5">Tax code</th><th className="px-4 py-3.5">Email</th><th className="px-4 py-3.5">Indirizzo</th><th className="px-4 py-3.5">Phone</th><th className="px-4 py-3.5">Ufficio</th><th className="px-4 py-3.5 text-right">Azioni</th></tr></thead><tbody className="divide-y divide-slate-100">{clients.length === 0 ? <tr><td colSpan={7} className="px-6 py-16 text-center text-sm text-slate-400">Nessun cliente registrato.</td></tr> : clients.map((client) => <tr key={client.id} className="transition hover:bg-blue-50/30"><td className="px-4 py-4 md:px-5"><p className="text-xs font-bold uppercase text-slate-800">{client.first_name} {client.last_name}</p><p className="mt-1 max-w-[180px] truncate text-[10px] text-slate-400">{client.notes || 'Nessuna nota'}</p></td><td className="px-4 py-4 text-xs text-slate-500">{client.tax_code || '—'}</td><td className="px-4 py-4 text-xs text-slate-600">{client.email || '—'}</td><td className="max-w-[210px] px-4 py-4 text-xs text-slate-600">{fullAddress(client)}</td><td className="px-4 py-4 text-xs text-slate-600">{client.phone || '—'}</td><td className="px-4 py-4 text-xs text-slate-600">{client.office || '—'}</td><td className="px-4 py-4"><div className="flex justify-end gap-1"><button type="button" onClick={() => openEditClient(client)} aria-label={`Visualizza ${client.first_name} ${client.last_name}`} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-blue-50 hover:text-blue-600"><Eye size={16} /></button><button type="button" onClick={() => openEditClient(client)} aria-label={`Modifica ${client.first_name} ${client.last_name}`} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-blue-50 hover:text-blue-600"><Pencil size={16} /></button><button type="button" onClick={() => removeClient(client)} aria-label={`Elimina ${client.first_name} ${client.last_name}`} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"><Trash2 size={16} /></button></div></td></tr>)}</tbody></table></div>}{modalOpen && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><div role="dialog" aria-modal="true" aria-labelledby="client-modal-title" className="max-h-[calc(100vh-32px)] w-full max-w-[560px] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl sm:p-7"><div className="mb-5 flex items-center justify-between"><h2 id="client-modal-title" className="text-xl font-bold text-slate-900">{editingClient ? 'Modifica Cliente' : 'Nuovo Cliente'}</h2><button type="button" onClick={closeModal} aria-label="Chiudi" className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"><X size={19} /></button></div><form onSubmit={saveClient} className="space-y-3"><div className="grid gap-3 sm:grid-cols-2"><input required value={clientForm.first_name} onChange={(event) => setClientForm((current) => ({ ...current, first_name: event.target.value }))} placeholder="Nome" className="input" /><input required value={clientForm.last_name} onChange={(event) => setClientForm((current) => ({ ...current, last_name: event.target.value }))} placeholder="Cognome" className="input" /></div><input value={clientForm.tax_code} onChange={(event) => setClientForm((current) => ({ ...current, tax_code: event.target.value }))} placeholder="Codice Fiscale" className="input" /><div className="grid gap-3 sm:grid-cols-2"><input type="email" value={clientForm.email} onChange={(event) => setClientForm((current) => ({ ...current, email: event.target.value }))} placeholder="Email" className="input" /><input value={clientForm.phone} onChange={(event) => setClientForm((current) => ({ ...current, phone: event.target.value }))} placeholder="Telefono" className="input" /></div><textarea value={clientForm.notes} onChange={(event) => setClientForm((current) => ({ ...current, notes: event.target.value }))} rows={3} placeholder="Note" className="input resize-y" /><div className="border-t border-slate-100 pt-5"><div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600"><MapPin size={15} className="text-blue-600" /> Indirizzo</div><input value={clientForm.address} onChange={(event) => setClientForm((current) => ({ ...current, address: event.target.value }))} placeholder="Cerca indirizzo (es. Via Prenestina, Roma)..." className="input" /><div className="mt-3 grid gap-3 sm:grid-cols-3"><input value={clientForm.street_number} onChange={(event) => setClientForm((current) => ({ ...current, street_number: event.target.value }))} placeholder="N. civico" className="input" /><input value={clientForm.postal_code} onChange={(event) => setClientForm((current) => ({ ...current, postal_code: event.target.value }))} placeholder="CAP" className="input" /><input value={clientForm.city} onChange={(event) => setClientForm((current) => ({ ...current, city: event.target.value }))} placeholder="Comune" className="input" /></div><div className="mt-3 grid gap-3 sm:grid-cols-3"><input value={clientForm.province} onChange={(event) => setClientForm((current) => ({ ...current, province: event.target.value }))} placeholder="Provincia" className="input" /><input value={clientForm.province_code} onChange={(event) => setClientForm((current) => ({ ...current, province_code: event.target.value }))} placeholder="Sigla" className="input" /><input value={clientForm.region} onChange={(event) => setClientForm((current) => ({ ...current, region: event.target.value }))} placeholder="Regione" className="input" /></div><input value={clientForm.country} onChange={(event) => setClientForm((current) => ({ ...current, country: event.target.value }))} placeholder="Paese" className="input mt-3" /></div><input value={clientForm.office} onChange={(event) => setClientForm((current) => ({ ...current, office: event.target.value }))} placeholder="Ufficio CAF" className="input" /><div className="flex justify-end gap-3 border-t border-slate-100 pt-5"><button type="button" onClick={closeModal} className="px-4 py-2.5 text-sm font-semibold text-slate-500 transition hover:text-slate-900">Annulla</button><button disabled={saving} type="submit" className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60">{saving ? 'Salvataggio...' : 'Salva'}</button></div></form></div></div>}</section>;
 }
 
 function CafOffices() {
