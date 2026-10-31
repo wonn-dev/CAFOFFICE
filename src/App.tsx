@@ -144,6 +144,21 @@ type CreditPayment = {
   paid_at: string | null;
   created_at: string;
 };
+type AgendaEvent = {
+  id: string;
+  title: string;
+  work_type: string;
+  event_date: string;
+  start_time: string;
+  end_time: string | null;
+  office: string;
+  notes: string;
+  reminder_enabled: boolean;
+  reminder_minutes: number;
+  status: 'Pianificata' | 'Completata' | 'Annullata';
+  created_at: string;
+  updated_at: string;
+};
 type StoredPractice = {
   id: string;
   protocol: string;
@@ -194,7 +209,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCompact, setSidebarCompact] = useState(false);
 
-  const activeSubtitle = useMemo(() => activePage === 'Dashboard' ? 'Panoramica di sistema' : activePage === 'Nuova Pratica' ? 'Invia una nuova pratica al team back-office.' : activePage === 'Uffici CAF' ? 'Gestisci le sedi CAF che collaborano con il tuo ufficio.' : activePage === 'Clienti' ? 'Gestisci i clienti e tutte le loro informazioni.' : activePage === 'Utenti e Ruoli' ? 'Gestisci accessi, ruoli e assegnazioni del team.' : activePage === 'Servizi e Prezzi' ? 'Configura il catalogo dei servizi disponibili per le pratiche.' : activePage === 'Gestione Crediti' ? 'Ricarica, controlla e gestisci i crediti degli uffici esterni.' : 'Sezione in preparazione', [activePage]);
+  const activeSubtitle = useMemo(() => activePage === 'Dashboard' ? 'Panoramica di sistema' : activePage === 'Nuova Pratica' ? 'Invia una nuova pratica al team back-office.' : activePage === 'Uffici CAF' ? 'Gestisci le sedi CAF che collaborano con il tuo ufficio.' : activePage === 'Clienti' ? 'Gestisci i clienti e tutte le loro informazioni.' : activePage === 'Utenti e Ruoli' ? 'Gestisci accessi, ruoli e assegnazioni del team.' : activePage === 'Servizi e Prezzi' ? 'Configura il catalogo dei servizi disponibili per le pratiche.' : activePage === 'Gestione Crediti' ? 'Ricarica, controlla e gestisci i crediti degli uffici esterni.' : activePage === 'Agenda' ? 'Organizza appuntamenti, scadenze e attività del team.' : 'Sezione in preparazione', [activePage]);
   const selectPage = (page: string) => { setActivePage(page); setSidebarOpen(false); };
 
   return (
@@ -215,7 +230,7 @@ function App() {
       {sidebarOpen && <button aria-label="Chiudi menu" onClick={() => setSidebarOpen(false)} className="fixed inset-0 z-30 bg-slate-950/40 lg:hidden" />}
       <div className={`transition-[padding] duration-300 ${sidebarCompact ? 'lg:pl-[84px]' : 'lg:pl-[264px]'}`}>
         <header className="sticky top-0 z-20 flex h-[76px] items-center justify-between border-b border-slate-200 bg-white/95 px-5 backdrop-blur md:px-8"><div className="flex items-center gap-3"><button onClick={() => setSidebarOpen(true)} aria-label="Apri menu" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:hidden"><Menu size={20} /></button><div><p className="hidden text-[11px] font-medium text-slate-400 sm:block">Amministratore Principale</p><p className="text-sm font-semibold text-slate-900">{activePage === 'Dashboard' ? 'Pannello di Controllo' : activePage}</p></div></div><div className="flex items-center gap-4 md:gap-6"><button aria-label="Cerca" className="hidden rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 sm:block"><Search size={18} /></button><button aria-label="Notifiche" className="relative rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"><Bell size={19} /><span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">9</span></button><div className="hidden h-8 w-px bg-slate-200 sm:block" /><div className="flex items-center gap-2.5"><div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#101a2e] text-[11px] font-bold text-white">MS</div><div className="hidden lg:block"><p className="text-xs font-semibold text-slate-800">Md Shawon Ahmed</p><p className="mt-0.5 text-[10px] text-slate-400">shawon.soluzionecentro@gmail.com</p></div><ChevronDown size={15} className="hidden text-slate-400 lg:block" /></div></div></header>
-        <main className="mx-auto max-w-[1440px] p-5 md:p-8"><div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><div className="mb-2 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-blue-600"><SlidersHorizontal size={13} /> Area amministrativa</div><h1 className="text-2xl font-bold tracking-tight text-slate-950 md:text-[28px]">{activePage}</h1><p className="mt-1 text-sm text-slate-500">{activeSubtitle}</p></div>{activePage === 'Dashboard' && <button onClick={() => selectPage('Nuova Pratica')} className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-600/25"><FilePlus2 size={17} /> Nuova Pratica</button>}</div>{activePage === 'Dashboard' ? <Dashboard /> : activePage === 'Nuova Pratica' ? <NewPractice /> : activePage === 'Tutte le Pratiche' ? <AllPractices /> : activePage === 'Uffici CAF' ? <CafOffices /> : activePage === 'Clienti' ? <Clients /> : activePage === 'Utenti e Ruoli' ? <UsersRoles /> : activePage === 'Servizi e Prezzi' ? <ServicesCatalog /> : activePage === 'Gestione Crediti' ? <CreditManagement /> : <PlaceholderPage page={activePage} />}</main>
+        <main className="mx-auto max-w-[1440px] p-5 md:p-8"><div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><div className="mb-2 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-blue-600"><SlidersHorizontal size={13} /> Area amministrativa</div><h1 className="text-2xl font-bold tracking-tight text-slate-950 md:text-[28px]">{activePage}</h1><p className="mt-1 text-sm text-slate-500">{activeSubtitle}</p></div>{activePage === 'Dashboard' && <button onClick={() => selectPage('Nuova Pratica')} className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-600/25"><FilePlus2 size={17} /> Nuova Pratica</button>}</div>{activePage === 'Dashboard' ? <Dashboard /> : activePage === 'Nuova Pratica' ? <NewPractice /> : activePage === 'Tutte le Pratiche' ? <AllPractices /> : activePage === 'Uffici CAF' ? <CafOffices /> : activePage === 'Clienti' ? <Clients /> : activePage === 'Utenti e Ruoli' ? <UsersRoles /> : activePage === 'Servizi e Prezzi' ? <ServicesCatalog /> : activePage === 'Gestione Crediti' ? <CreditManagement /> : activePage === 'Agenda' ? <Agenda /> : <PlaceholderPage page={activePage} />}</main>
       </div>
     </div>
   );
@@ -510,6 +525,67 @@ function sortValue(practice: StoredPractice, sortBy: string) {
   if (sortBy === 'client') return practice.client_name;
   if (sortBy === 'office') return practice.office;
   return practice.created_at;
+}
+
+function Agenda() {
+  const today = new Date().toISOString().slice(0, 10);
+  const [events, setEvents] = useState<AgendaEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<AgendaEvent | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [filter, setFilter] = useState<'Tutti' | 'Pianificate' | 'Completate'>('Tutti');
+  const [form, setForm] = useState({ title: '', work_type: 'Appuntamento cliente', event_date: today, start_time: '09:00', end_time: '10:00', office: 'CAF Roma Eur', notes: '', reminder_enabled: true, reminder_minutes: 30 });
+  const workTypes = ['Appuntamento cliente', 'Chiamata', 'Consegna documenti', 'Scadenza pratica', 'Lavoro amministrativo', 'Altro'];
+
+  useEffect(() => {
+    const loadEvents = async () => {
+      const { data, error } = await supabase.from('agenda_events').select('id, title, work_type, event_date, start_time, end_time, office, notes, reminder_enabled, reminder_minutes, status, created_at, updated_at').order('event_date').order('start_time');
+      if (error) setErrorMessage('Non è stato possibile caricare l’agenda.');
+      setEvents((data as AgendaEvent[]) ?? []);
+      setLoading(false);
+    };
+    void loadEvents();
+  }, []);
+
+  const openNew = () => { setEditingEvent(null); setForm({ title: '', work_type: 'Appuntamento cliente', event_date: today, start_time: '09:00', end_time: '10:00', office: 'CAF Roma Eur', notes: '', reminder_enabled: true, reminder_minutes: 30 }); setErrorMessage(''); setModalOpen(true); };
+  const openEdit = (event: AgendaEvent) => { setEditingEvent(event); setForm({ title: event.title, work_type: event.work_type, event_date: event.event_date, start_time: event.start_time.slice(0, 5), end_time: event.end_time?.slice(0, 5) ?? '', office: event.office, notes: event.notes, reminder_enabled: event.reminder_enabled, reminder_minutes: event.reminder_minutes }); setErrorMessage(''); setModalOpen(true); };
+  const closeModal = () => { if (!saving) setModalOpen(false); };
+  const saveEvent = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSaving(true);
+    setErrorMessage('');
+    const payload = { ...form, end_time: form.end_time || null, updated_at: new Date().toISOString() };
+    if (editingEvent) {
+      const { error } = await supabase.from('agenda_events').update(payload).eq('id', editingEvent.id);
+      if (error) setErrorMessage('Non è stato possibile aggiornare l’attività.');
+      else { setEvents((current) => current.map((item) => item.id === editingEvent.id ? { ...item, ...payload, end_time: payload.end_time } : item)); setModalOpen(false); }
+    } else {
+      const { data, error } = await supabase.from('agenda_events').insert(payload).select('id, title, work_type, event_date, start_time, end_time, office, notes, reminder_enabled, reminder_minutes, status, created_at, updated_at').maybeSingle();
+      if (error || !data) setErrorMessage('Non è stato possibile salvare l’attività.');
+      else { setEvents((current) => [...current, data as AgendaEvent].sort((first, second) => `${first.event_date}${first.start_time}`.localeCompare(`${second.event_date}${second.start_time}`))); setModalOpen(false); }
+    }
+    setSaving(false);
+  };
+  const updateStatus = async (item: AgendaEvent, status: AgendaEvent['status']) => {
+    const { error } = await supabase.from('agenda_events').update({ status, updated_at: new Date().toISOString() }).eq('id', item.id);
+    if (error) { setErrorMessage('Non è stato possibile aggiornare lo stato.'); return; }
+    setEvents((current) => current.map((event) => event.id === item.id ? { ...event, status } : event));
+  };
+  const removeEvent = async (item: AgendaEvent) => {
+    if (!window.confirm(`Eliminare ${item.title}?`)) return;
+    const { error } = await supabase.from('agenda_events').delete().eq('id', item.id);
+    if (error) { setErrorMessage('Non è stato possibile eliminare l’attività.'); return; }
+    setEvents((current) => current.filter((event) => event.id !== item.id));
+  };
+  const visibleEvents = events.filter((event) => filter === 'Tutti' || (filter === 'Pianificate' ? event.status === 'Pianificata' : event.status === 'Completata'));
+  const formatDay = (value: string) => new Intl.DateTimeFormat('it-IT', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(`${value}T12:00:00`));
+  const formatShortDay = (value: string) => new Intl.DateTimeFormat('it-IT', { day: '2-digit', month: 'short' }).format(new Date(`${value}T12:00:00`));
+  const groupedEvents = visibleEvents.reduce<Record<string, AgendaEvent[]>>((groups, event) => { groups[event.event_date] = [...(groups[event.event_date] ?? []), event]; return groups; }, {});
+  const pendingCount = events.filter((event) => event.status === 'Pianificata').length;
+
+  return <section><div className="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><div className="flex items-center gap-2 text-sm font-semibold text-slate-700"><CalendarDays size={17} className="text-blue-600" /> {pendingCount} attività pianificate</div><p className="mt-1 text-sm text-slate-500">Appuntamenti, scadenze e attività organizzate per giornata.</p></div><button type="button" onClick={openNew} className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700"><Plus size={17} /> Nuovo appuntamento</button></div><div className="mb-5 flex flex-wrap items-center gap-2"><div className="flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm"><button type="button" onClick={() => setFilter('Tutti')} className={`rounded-lg px-3.5 py-2 text-xs font-semibold transition ${filter === 'Tutti' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>Tutti</button><button type="button" onClick={() => setFilter('Pianificate')} className={`rounded-lg px-3.5 py-2 text-xs font-semibold transition ${filter === 'Pianificate' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>Pianificate</button><button type="button" onClick={() => setFilter('Completate')} className={`rounded-lg px-3.5 py-2 text-xs font-semibold transition ${filter === 'Completate' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>Completate</button></div></div>{errorMessage && <p role="alert" className="mb-4 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700">{errorMessage}</p>}{loading ? <div className="flex min-h-[300px] items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm text-slate-400">Caricamento agenda...</div> : Object.keys(groupedEvents).length === 0 ? <div className="flex min-h-[300px] items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white px-6 text-center"><div><div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600"><CalendarDays size={22} /></div><p className="text-sm font-semibold text-slate-800">Nessuna attività in agenda</p><p className="mt-1 text-xs text-slate-400">Crea il primo appuntamento o inserisci una scadenza da ricordare.</p><button type="button" onClick={openNew} className="mt-4 text-xs font-semibold text-blue-600 hover:text-blue-800">Aggiungi attività</button></div></div> : <div className="space-y-5">{Object.entries(groupedEvents).map(([date, dayEvents]) => <div key={date} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/70 px-5 py-4"><div className="flex h-10 w-10 flex-col items-center justify-center rounded-xl bg-blue-600 text-white"><span className="text-[9px] font-semibold uppercase">{formatShortDay(date).split(' ')[1]}</span><span className="text-sm font-bold leading-4">{date.slice(8, 10)}</span></div><div><h2 className="text-sm font-bold capitalize text-slate-900">{formatDay(date)}</h2><p className="mt-0.5 text-xs text-slate-400">{dayEvents.length} {dayEvents.length === 1 ? 'attività' : 'attività'}</p></div></div><div className="divide-y divide-slate-100">{dayEvents.map((item) => <article key={item.id} className="flex flex-col gap-4 px-5 py-4 transition hover:bg-blue-50/20 md:flex-row md:items-center"><div className="flex w-24 shrink-0 items-center gap-2 text-sm font-bold text-slate-700"><Clock3 size={16} className="text-blue-500" /> {item.start_time.slice(0, 5)}</div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h3 className={`text-sm font-semibold ${item.status === 'Completata' ? 'text-slate-400 line-through' : 'text-slate-900'}`}>{item.title}</h3><span className="rounded-full bg-blue-50 px-2 py-1 text-[10px] font-semibold text-blue-600">{item.work_type}</span>{item.reminder_enabled && <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-700"><Bell size={11} /> {item.reminder_minutes} min prima</span>}</div><p className="mt-1 text-xs text-slate-500">{item.office || 'Nessun ufficio'}{item.end_time ? ` · fino alle ${item.end_time.slice(0, 5)}` : ''}{item.notes ? ` · ${item.notes}` : ''}</p></div><div className="flex items-center gap-2 md:justify-end"><button type="button" onClick={() => void updateStatus(item, item.status === 'Completata' ? 'Pianificata' : 'Completata')} className={`rounded-lg px-2.5 py-2 text-xs font-semibold transition ${item.status === 'Completata' ? 'bg-slate-100 text-slate-500 hover:bg-blue-50 hover:text-blue-600' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}>{item.status === 'Completata' ? 'Riapri' : 'Completa'}</button><button type="button" onClick={() => openEdit(item)} className="rounded-lg p-2 text-slate-400 transition hover:bg-blue-50 hover:text-blue-600"><Pencil size={16} /></button><button type="button" onClick={() => void removeEvent(item)} className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"><Trash2 size={16} /></button></div></article>)}</div></div>)}</div>}{modalOpen && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><div role="dialog" aria-modal="true" aria-labelledby="agenda-modal-title" className="w-full max-w-[620px] rounded-2xl bg-white p-6 shadow-2xl sm:p-7"><div className="mb-5 flex items-center justify-between"><div><h2 id="agenda-modal-title" className="text-xl font-bold text-slate-900">{editingEvent ? 'Modifica attività' : 'Nuovo appuntamento'}</h2><p className="mt-1 text-xs text-slate-400">Inserisci cosa devi fare e quando ricordartelo.</p></div><button type="button" onClick={closeModal} aria-label="Chiudi" className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><X size={19} /></button></div><form onSubmit={saveEvent} className="space-y-4"><Field label="Titolo attività"><input required value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} className="input" placeholder="Es. Chiamare il cliente Rossi" /></Field><div className="grid gap-4 sm:grid-cols-2"><Field label="Tipo di lavoro"><select value={form.work_type} onChange={(event) => setForm((current) => ({ ...current, work_type: event.target.value }))} className="input">{workTypes.map((type) => <option key={type}>{type}</option>)}</select></Field><Field label="Ufficio / luogo"><input value={form.office} onChange={(event) => setForm((current) => ({ ...current, office: event.target.value }))} className="input" placeholder="Es. CAF Roma Eur" /></Field></div><div className="grid gap-4 sm:grid-cols-3"><Field label="Data"><input required type="date" value={form.event_date} onChange={(event) => setForm((current) => ({ ...current, event_date: event.target.value }))} className="input" /></Field><Field label="Ora inizio"><input required type="time" value={form.start_time} onChange={(event) => setForm((current) => ({ ...current, start_time: event.target.value }))} className="input" /></Field><Field label="Ora fine"><input type="time" value={form.end_time} onChange={(event) => setForm((current) => ({ ...current, end_time: event.target.value }))} className="input" /></Field></div><Field label="Cosa devi fare"><textarea value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} rows={4} className="input resize-y" placeholder="Descrivi il lavoro, i documenti da preparare o le informazioni importanti..." /></Field><section className="rounded-xl border border-amber-200 bg-amber-50/50 p-4"><label className="flex cursor-pointer items-center gap-3"><input type="checkbox" checked={form.reminder_enabled} onChange={(event) => setForm((current) => ({ ...current, reminder_enabled: event.target.checked }))} className="h-4 w-4 accent-blue-600" /><span className="flex items-center gap-2 text-sm font-semibold text-slate-800"><Bell size={16} className="text-amber-600" /> Imposta promemoria</span></label>{form.reminder_enabled && <div className="mt-3 flex items-center gap-2 text-xs text-slate-600"><span>Ricordami</span><select value={form.reminder_minutes} onChange={(event) => setForm((current) => ({ ...current, reminder_minutes: Number(event.target.value) }))} className="rounded-lg border border-amber-200 bg-white px-2.5 py-2 text-xs font-semibold text-slate-700"><option value={0}>All’ora dell’appuntamento</option><option value={15}>15 minuti prima</option><option value={30}>30 minuti prima</option><option value={60}>1 ora prima</option><option value={1440}>1 giorno prima</option></select></div>}</section><div className="flex justify-end gap-3 border-t border-slate-100 pt-5"><button type="button" onClick={closeModal} className="px-4 py-2.5 text-sm font-semibold text-slate-500">Annulla</button><button disabled={saving} type="submit" className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{saving ? 'Salvataggio...' : editingEvent ? 'Salva modifiche' : 'Crea appuntamento'}</button></div></form></div></div>}</section>;
 }
 
 function CreditManagement() {
