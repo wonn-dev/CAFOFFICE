@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from '
 import {
   AlertTriangle,
   ArrowRight,
+  ArrowUpRight,
   Bell,
   BriefcaseBusiness,
   Building2,
@@ -115,6 +116,34 @@ type ServiceItem = {
   sort_order: number;
 };
 type ServiceForm = Omit<ServiceItem, 'id' | 'sort_order'>;
+type OfficeCreditAccount = {
+  id: string;
+  office_id: string;
+  available_credits: number;
+  credits_received: number;
+  credits_used: number;
+  credits_refunded: number;
+  last_recharge_at: string | null;
+};
+type CreditRequest = {
+  id: string;
+  office_id: string;
+  requested_credits: number;
+  note: string;
+  status: 'In attesa' | 'Approvata' | 'Rifiutata';
+  requested_at: string;
+};
+type CreditPayment = {
+  id: string;
+  office_id: string;
+  credits: number;
+  amount: number;
+  payment_method: string;
+  reference: string;
+  status: 'In attesa' | 'Pagato' | 'Annullato';
+  paid_at: string | null;
+  created_at: string;
+};
 type StoredPractice = {
   id: string;
   protocol: string;
@@ -165,7 +194,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCompact, setSidebarCompact] = useState(false);
 
-  const activeSubtitle = useMemo(() => activePage === 'Dashboard' ? 'Panoramica di sistema' : activePage === 'Nuova Pratica' ? 'Invia una nuova pratica al team back-office.' : activePage === 'Uffici CAF' ? 'Gestisci le sedi CAF che collaborano con il tuo ufficio.' : activePage === 'Clienti' ? 'Gestisci i clienti e tutte le loro informazioni.' : activePage === 'Utenti e Ruoli' ? 'Gestisci accessi, ruoli e assegnazioni del team.' : activePage === 'Servizi e Prezzi' ? 'Configura il catalogo dei servizi disponibili per le pratiche.' : 'Sezione in preparazione', [activePage]);
+  const activeSubtitle = useMemo(() => activePage === 'Dashboard' ? 'Panoramica di sistema' : activePage === 'Nuova Pratica' ? 'Invia una nuova pratica al team back-office.' : activePage === 'Uffici CAF' ? 'Gestisci le sedi CAF che collaborano con il tuo ufficio.' : activePage === 'Clienti' ? 'Gestisci i clienti e tutte le loro informazioni.' : activePage === 'Utenti e Ruoli' ? 'Gestisci accessi, ruoli e assegnazioni del team.' : activePage === 'Servizi e Prezzi' ? 'Configura il catalogo dei servizi disponibili per le pratiche.' : activePage === 'Gestione Crediti' ? 'Ricarica, controlla e gestisci i crediti degli uffici esterni.' : 'Sezione in preparazione', [activePage]);
   const selectPage = (page: string) => { setActivePage(page); setSidebarOpen(false); };
 
   return (
@@ -186,7 +215,7 @@ function App() {
       {sidebarOpen && <button aria-label="Chiudi menu" onClick={() => setSidebarOpen(false)} className="fixed inset-0 z-30 bg-slate-950/40 lg:hidden" />}
       <div className={`transition-[padding] duration-300 ${sidebarCompact ? 'lg:pl-[84px]' : 'lg:pl-[264px]'}`}>
         <header className="sticky top-0 z-20 flex h-[76px] items-center justify-between border-b border-slate-200 bg-white/95 px-5 backdrop-blur md:px-8"><div className="flex items-center gap-3"><button onClick={() => setSidebarOpen(true)} aria-label="Apri menu" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:hidden"><Menu size={20} /></button><div><p className="hidden text-[11px] font-medium text-slate-400 sm:block">Amministratore Principale</p><p className="text-sm font-semibold text-slate-900">{activePage === 'Dashboard' ? 'Pannello di Controllo' : activePage}</p></div></div><div className="flex items-center gap-4 md:gap-6"><button aria-label="Cerca" className="hidden rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 sm:block"><Search size={18} /></button><button aria-label="Notifiche" className="relative rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"><Bell size={19} /><span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">9</span></button><div className="hidden h-8 w-px bg-slate-200 sm:block" /><div className="flex items-center gap-2.5"><div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#101a2e] text-[11px] font-bold text-white">MS</div><div className="hidden lg:block"><p className="text-xs font-semibold text-slate-800">Md Shawon Ahmed</p><p className="mt-0.5 text-[10px] text-slate-400">shawon.soluzionecentro@gmail.com</p></div><ChevronDown size={15} className="hidden text-slate-400 lg:block" /></div></div></header>
-        <main className="mx-auto max-w-[1440px] p-5 md:p-8"><div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><div className="mb-2 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-blue-600"><SlidersHorizontal size={13} /> Area amministrativa</div><h1 className="text-2xl font-bold tracking-tight text-slate-950 md:text-[28px]">{activePage}</h1><p className="mt-1 text-sm text-slate-500">{activeSubtitle}</p></div>{activePage === 'Dashboard' && <button onClick={() => selectPage('Nuova Pratica')} className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-600/25"><FilePlus2 size={17} /> Nuova Pratica</button>}</div>{activePage === 'Dashboard' ? <Dashboard /> : activePage === 'Nuova Pratica' ? <NewPractice /> : activePage === 'Tutte le Pratiche' ? <AllPractices /> : activePage === 'Uffici CAF' ? <CafOffices /> : activePage === 'Clienti' ? <Clients /> : activePage === 'Utenti e Ruoli' ? <UsersRoles /> : activePage === 'Servizi e Prezzi' ? <ServicesCatalog /> : <PlaceholderPage page={activePage} />}</main>
+        <main className="mx-auto max-w-[1440px] p-5 md:p-8"><div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><div className="mb-2 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-blue-600"><SlidersHorizontal size={13} /> Area amministrativa</div><h1 className="text-2xl font-bold tracking-tight text-slate-950 md:text-[28px]">{activePage}</h1><p className="mt-1 text-sm text-slate-500">{activeSubtitle}</p></div>{activePage === 'Dashboard' && <button onClick={() => selectPage('Nuova Pratica')} className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-600/25"><FilePlus2 size={17} /> Nuova Pratica</button>}</div>{activePage === 'Dashboard' ? <Dashboard /> : activePage === 'Nuova Pratica' ? <NewPractice /> : activePage === 'Tutte le Pratiche' ? <AllPractices /> : activePage === 'Uffici CAF' ? <CafOffices /> : activePage === 'Clienti' ? <Clients /> : activePage === 'Utenti e Ruoli' ? <UsersRoles /> : activePage === 'Servizi e Prezzi' ? <ServicesCatalog /> : activePage === 'Gestione Crediti' ? <CreditManagement /> : <PlaceholderPage page={activePage} />}</main>
       </div>
     </div>
   );
@@ -481,6 +510,87 @@ function sortValue(practice: StoredPractice, sortBy: string) {
   if (sortBy === 'client') return practice.client_name;
   if (sortBy === 'office') return practice.office;
   return practice.created_at;
+}
+
+function CreditManagement() {
+  const [offices, setOffices] = useState<CafOffice[]>([]);
+  const [accounts, setAccounts] = useState<OfficeCreditAccount[]>([]);
+  const [requests, setRequests] = useState<CreditRequest[]>([]);
+  const [payments, setPayments] = useState<CreditPayment[]>([]);
+  const [activeTab, setActiveTab] = useState<'Saldi' | 'Richieste' | 'Pagamenti'>('Saldi');
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('Attivi');
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [modal, setModal] = useState<'recharge' | 'request' | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [rechargeForm, setRechargeForm] = useState({ officeId: '', credits: '', amount: '', paymentMethod: 'Bonifico', reference: '', note: '' });
+  const [requestForm, setRequestForm] = useState({ officeId: '', credits: '', note: '' });
+
+  useEffect(() => {
+    const loadCreditData = async () => {
+      const [officeResult, accountResult, requestResult, paymentResult] = await Promise.all([
+        supabase.from('caf_offices').select('id, name, address, vat_number, email, phone, is_active, created_at').order('name'),
+        supabase.from('office_credit_accounts').select('id, office_id, available_credits, credits_received, credits_used, credits_refunded, last_recharge_at'),
+        supabase.from('credit_requests').select('id, office_id, requested_credits, note, status, requested_at').order('requested_at', { ascending: false }),
+        supabase.from('credit_payments').select('id, office_id, credits, amount, payment_method, reference, status, paid_at, created_at').order('created_at', { ascending: false }),
+      ]);
+      if (officeResult.error || accountResult.error || requestResult.error || paymentResult.error) setErrorMessage('Non è stato possibile caricare la gestione crediti.');
+      const loadedOffices = (officeResult.data as CafOffice[]) ?? [];
+      setOffices(loadedOffices);
+      setAccounts((accountResult.data as OfficeCreditAccount[]) ?? []);
+      setRequests((requestResult.data as CreditRequest[]) ?? []);
+      setPayments((paymentResult.data as CreditPayment[]) ?? []);
+      setLoading(false);
+    };
+    void loadCreditData();
+  }, []);
+
+  const officeName = (officeId: string) => offices.find((office) => office.id === officeId)?.name ?? 'Ufficio non disponibile';
+  const visibleOffices = offices.filter((office) => {
+    const account = accounts.find((item) => item.office_id === office.id);
+    const matchesSearch = `${office.name} ${office.vat_number}`.toLowerCase().includes(search.toLowerCase());
+    return matchesSearch && (statusFilter === 'Tutti gli stati' || (statusFilter === 'Attivi' ? office.is_active : !office.is_active)) && account;
+  });
+  const formatDate = (value: string | null) => value ? new Intl.DateTimeFormat('it-IT', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value)) : '—';
+  const closeModal = () => { if (!saving) setModal(null); };
+  const openRecharge = (officeId = visibleOffices[0]?.id ?? '') => { setRechargeForm({ officeId, credits: '', amount: '', paymentMethod: 'Bonifico', reference: '', note: '' }); setErrorMessage(''); setModal('recharge'); };
+  const openRequest = (officeId = visibleOffices[0]?.id ?? '') => { setRequestForm({ officeId, credits: '', note: '' }); setErrorMessage(''); setModal('request'); };
+
+  const saveRecharge = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const credits = Number(rechargeForm.credits);
+    const amount = Number(rechargeForm.amount.replace(',', '.'));
+    if (!rechargeForm.officeId || !Number.isFinite(credits) || credits <= 0 || !Number.isFinite(amount) || amount < 0) { setErrorMessage('Inserisci una quantità di crediti e un importo validi.'); return; }
+    const account = accounts.find((item) => item.office_id === rechargeForm.officeId);
+    if (!account) { setErrorMessage('L’account crediti dell’ufficio non è disponibile.'); return; }
+    setSaving(true);
+    const { data: payment, error: paymentError } = await supabase.from('credit_payments').insert({ office_id: rechargeForm.officeId, credits, amount, payment_method: rechargeForm.paymentMethod, reference: rechargeForm.reference, status: 'Pagato', paid_at: new Date().toISOString() }).select('id, office_id, credits, amount, payment_method, reference, status, paid_at, created_at').maybeSingle();
+    const { data: transaction, error: transactionError } = await supabase.from('credit_transactions').insert({ office_id: rechargeForm.officeId, transaction_type: 'recharge', credits, note: rechargeForm.note || 'Ricarica crediti' }).select('id').maybeSingle();
+    const { error: accountError } = await supabase.from('office_credit_accounts').update({ available_credits: account.available_credits + credits, credits_received: account.credits_received + credits, last_recharge_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', account.id);
+    if (paymentError || transactionError || accountError || !payment || !transaction) setErrorMessage('Non è stato possibile completare la ricarica.');
+    else { setAccounts((current) => current.map((item) => item.id === account.id ? { ...item, available_credits: item.available_credits + credits, credits_received: item.credits_received + credits, last_recharge_at: new Date().toISOString() } : item)); setPayments((current) => [payment as CreditPayment, ...current]); setModal(null); }
+    setSaving(false);
+  };
+
+  const saveRequest = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const credits = Number(requestForm.credits);
+    if (!requestForm.officeId || !Number.isFinite(credits) || credits <= 0) { setErrorMessage('Inserisci una quantità di crediti valida.'); return; }
+    setSaving(true);
+    const { data, error } = await supabase.from('credit_requests').insert({ office_id: requestForm.officeId, requested_credits: credits, note: requestForm.note }).select('id, office_id, requested_credits, note, status, requested_at').maybeSingle();
+    if (error || !data) setErrorMessage('Non è stato possibile inviare la richiesta.');
+    else { setRequests((current) => [data as CreditRequest, ...current]); setModal(null); setActiveTab('Richieste'); }
+    setSaving(false);
+  };
+
+  const updateRequest = async (request: CreditRequest, status: CreditRequest['status']) => {
+    const { error } = await supabase.from('credit_requests').update({ status, responded_at: new Date().toISOString() }).eq('id', request.id);
+    if (error) { setErrorMessage('Non è stato possibile aggiornare la richiesta.'); return; }
+    setRequests((current) => current.map((item) => item.id === request.id ? { ...item, status } : item));
+  };
+
+  return <section><div className="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-sm text-slate-500">Controlla i saldi, ricarica gli uffici e gestisci le richieste di credito.</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => openRequest()} className="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-white px-4 py-2.5 text-sm font-semibold text-blue-600 transition hover:bg-blue-50"><ArrowUpRight size={17} /> Richiedi Crediti</button><button type="button" onClick={() => openRecharge()} className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700"><Plus size={17} /> Ricarica Ufficio</button></div></div><div className="mb-5 flex flex-col gap-2 sm:flex-row"><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="input sm:w-40"><option>Attivi</option><option>Tutti gli stati</option><option>Inattivi</option></select><label className="relative flex-1"><Search size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cerca nome, città, P.IVA..." className="input pl-10" /></label></div><div className="mb-4 flex gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm"><button type="button" onClick={() => setActiveTab('Saldi')} className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${activeTab === 'Saldi' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>Saldi Uffici</button><button type="button" onClick={() => setActiveTab('Richieste')} className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${activeTab === 'Richieste' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>Richieste {requests.filter((request) => request.status === 'In attesa').length > 0 && <span className="ml-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] text-amber-700">{requests.filter((request) => request.status === 'In attesa').length}</span>}</button><button type="button" onClick={() => setActiveTab('Pagamenti')} className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${activeTab === 'Pagamenti' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>Pagamenti</button></div>{errorMessage && <p role="alert" className="mb-4 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700">{errorMessage}</p>}{loading ? <div className="flex min-h-[280px] items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm text-slate-400">Caricamento crediti...</div> : activeTab === 'Saldi' ? <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm"><table className="w-full min-w-[1050px] text-left"><thead className="bg-slate-50/80"><tr className="border-b border-slate-100 text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400"><th className="px-4 py-3.5">Nome Ufficio CAF</th><th className="px-4 py-3.5">Città</th><th className="px-4 py-3.5">Stato Account</th><th className="px-4 py-3.5 text-right">Crediti Disponibili</th><th className="px-4 py-3.5 text-right">Crediti Ricevuti</th><th className="px-4 py-3.5 text-right">Crediti Utilizzati</th><th className="px-4 py-3.5 text-right">Crediti Rimborsati</th><th className="px-4 py-3.5">Ultima Ricarica</th><th className="px-4 py-3.5 text-right">Azioni</th></tr></thead><tbody className="divide-y divide-slate-100">{visibleOffices.length === 0 ? <tr><td colSpan={9} className="px-6 py-16 text-center text-sm text-slate-400">Nessun ufficio trovato.</td></tr> : visibleOffices.map((office) => { const account = accounts.find((item) => item.office_id === office.id); if (!account) return null; return <tr key={office.id} className="transition hover:bg-blue-50/20"><td className="px-4 py-4 text-sm font-semibold text-slate-800">{office.name}</td><td className="px-4 py-4 text-sm text-slate-500">—</td><td className="px-4 py-4"><span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-600 ring-1 ring-inset ring-emerald-100">{office.is_active ? 'Attivo' : 'Inattivo'}</span></td><td className="px-4 py-4 text-right text-sm font-bold text-blue-600">{account.available_credits}</td><td className="px-4 py-4 text-right text-sm font-semibold text-emerald-600">{account.credits_received}</td><td className="px-4 py-4 text-right text-sm text-orange-500">{account.credits_used}</td><td className="px-4 py-4 text-right text-sm text-violet-600">{account.credits_refunded}</td><td className="px-4 py-4 text-sm text-slate-500">{formatDate(account.last_recharge_at)}</td><td className="px-4 py-4 text-right"><button type="button" onClick={() => openRecharge(office.id)} className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 transition hover:text-blue-800">Assegna Crediti <ArrowRight size={14} /></button></td></tr>; })}</tbody></table></div> : activeTab === 'Richieste' ? <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm"><table className="w-full min-w-[760px] text-left"><thead className="bg-slate-50/80"><tr className="border-b border-slate-100 text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400"><th className="px-5 py-3.5">Ufficio</th><th className="px-4 py-3.5">Crediti Richiesti</th><th className="px-4 py-3.5">Nota</th><th className="px-4 py-3.5">Data</th><th className="px-4 py-3.5">Stato</th><th className="px-4 py-3.5 text-right">Azioni</th></tr></thead><tbody className="divide-y divide-slate-100">{requests.length === 0 ? <tr><td colSpan={6} className="px-6 py-16 text-center text-sm text-slate-400">Nessuna richiesta di credito.</td></tr> : requests.map((request) => <tr key={request.id}><td className="px-5 py-4 text-sm font-semibold text-slate-800">{officeName(request.office_id)}</td><td className="px-4 py-4 text-sm font-bold text-blue-600">{request.requested_credits}</td><td className="px-4 py-4 text-xs text-slate-500">{request.note || '—'}</td><td className="px-4 py-4 text-xs text-slate-500">{formatDate(request.requested_at)}</td><td className="px-4 py-4"><span className="text-xs font-semibold text-slate-600">{request.status}</span></td><td className="px-4 py-4 text-right">{request.status === 'In attesa' && <span className="inline-flex gap-2"><button type="button" onClick={() => void updateRequest(request, 'Rifiutata')} className="text-xs font-semibold text-slate-500 hover:text-red-600">Rifiuta</button><button type="button" onClick={() => void updateRequest(request, 'Approvata')} className="text-xs font-semibold text-blue-600 hover:text-blue-800">Approva</button></span>}</td></tr>)}</tbody></table></div> : <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm"><table className="w-full min-w-[760px] text-left"><thead className="bg-slate-50/80"><tr className="border-b border-slate-100 text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400"><th className="px-5 py-3.5">Ufficio</th><th className="px-4 py-3.5">Crediti</th><th className="px-4 py-3.5">Importo</th><th className="px-4 py-3.5">Metodo</th><th className="px-4 py-3.5">Riferimento</th><th className="px-4 py-3.5">Stato</th><th className="px-4 py-3.5">Data</th></tr></thead><tbody className="divide-y divide-slate-100">{payments.length === 0 ? <tr><td colSpan={7} className="px-6 py-16 text-center text-sm text-slate-400">Nessun pagamento registrato.</td></tr> : payments.map((payment) => <tr key={payment.id}><td className="px-5 py-4 text-sm font-semibold text-slate-800">{officeName(payment.office_id)}</td><td className="px-4 py-4 text-sm font-bold text-blue-600">{payment.credits}</td><td className="px-4 py-4 text-sm text-slate-600">€{payment.amount.toFixed(2).replace('.', ',')}</td><td className="px-4 py-4 text-xs text-slate-500">{payment.payment_method}</td><td className="px-4 py-4 text-xs text-slate-500">{payment.reference || '—'}</td><td className="px-4 py-4 text-xs font-semibold text-emerald-600">{payment.status}</td><td className="px-4 py-4 text-xs text-slate-500">{formatDate(payment.paid_at ?? payment.created_at)}</td></tr>)}</tbody></table></div>}{modal === 'recharge' && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><div role="dialog" aria-modal="true" aria-labelledby="recharge-title" className="w-full max-w-[560px] rounded-2xl bg-white p-6 shadow-2xl sm:p-7"><div className="mb-5 flex items-center justify-between"><div><h2 id="recharge-title" className="text-xl font-bold text-slate-900">Ricarica Ufficio</h2><p className="mt-1 text-xs text-slate-400">Assegna crediti e registra il pagamento.</p></div><button type="button" onClick={closeModal} aria-label="Chiudi" className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><X size={19} /></button></div><form onSubmit={saveRecharge} className="space-y-4"><Field label="Ufficio CAF"><select required value={rechargeForm.officeId} onChange={(event) => setRechargeForm((current) => ({ ...current, officeId: event.target.value }))} className="input"><option value="">Seleziona un ufficio...</option>{offices.filter((office) => office.is_active).map((office) => <option key={office.id} value={office.id}>{office.name}</option>)}</select></Field><div className="grid gap-4 sm:grid-cols-2"><Field label="Crediti"><input required type="number" min="1" value={rechargeForm.credits} onChange={(event) => setRechargeForm((current) => ({ ...current, credits: event.target.value }))} className="input" /></Field><Field label="Importo (€)"><input required type="text" inputMode="decimal" value={rechargeForm.amount} onChange={(event) => setRechargeForm((current) => ({ ...current, amount: event.target.value }))} className="input" placeholder="0,00" /></Field></div><div className="grid gap-4 sm:grid-cols-2"><Field label="Metodo pagamento"><select value={rechargeForm.paymentMethod} onChange={(event) => setRechargeForm((current) => ({ ...current, paymentMethod: event.target.value }))} className="input"><option>Bonifico</option><option>Carta</option><option>Contanti</option><option>Altro</option></select></Field><Field label="Riferimento"><input value={rechargeForm.reference} onChange={(event) => setRechargeForm((current) => ({ ...current, reference: event.target.value }))} className="input" placeholder="Es. RIC-2026-002" /></Field></div><Field label="Nota"><textarea value={rechargeForm.note} onChange={(event) => setRechargeForm((current) => ({ ...current, note: event.target.value }))} rows={3} className="input resize-y" /></Field><div className="flex justify-end gap-3 border-t border-slate-100 pt-5"><button type="button" onClick={closeModal} className="px-4 py-2.5 text-sm font-semibold text-slate-500">Annulla</button><button disabled={saving} type="submit" className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{saving ? 'Salvataggio...' : 'Conferma ricarica'}</button></div></form></div></div>}{modal === 'request' && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><div role="dialog" aria-modal="true" aria-labelledby="request-title" className="w-full max-w-[500px] rounded-2xl bg-white p-6 shadow-2xl sm:p-7"><div className="mb-5 flex items-center justify-between"><h2 id="request-title" className="text-xl font-bold text-slate-900">Richiedi Crediti</h2><button type="button" onClick={closeModal} aria-label="Chiudi" className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><X size={19} /></button></div><form onSubmit={saveRequest} className="space-y-4"><Field label="Ufficio CAF"><select required value={requestForm.officeId} onChange={(event) => setRequestForm((current) => ({ ...current, officeId: event.target.value }))} className="input"><option value="">Seleziona un ufficio...</option>{offices.filter((office) => office.is_active).map((office) => <option key={office.id} value={office.id}>{office.name}</option>)}</select></Field><Field label="Crediti richiesti"><input required type="number" min="1" value={requestForm.credits} onChange={(event) => setRequestForm((current) => ({ ...current, credits: event.target.value }))} className="input" /></Field><Field label="Nota"><textarea value={requestForm.note} onChange={(event) => setRequestForm((current) => ({ ...current, note: event.target.value }))} rows={4} className="input resize-y" placeholder="Perché servono questi crediti?" /></Field><div className="flex justify-end gap-3 border-t border-slate-100 pt-5"><button type="button" onClick={closeModal} className="px-4 py-2.5 text-sm font-semibold text-slate-500">Annulla</button><button disabled={saving} type="submit" className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{saving ? 'Invio...' : 'Invia richiesta'}</button></div></form></div></div>}</section>;
 }
 
 function ServicesCatalog() {
