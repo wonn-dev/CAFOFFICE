@@ -5,6 +5,11 @@ import {
   Bell,
   BriefcaseBusiness,
   Building2,
+  Calculator,
+  ChevronUp,
+  Globe2,
+  Handshake,
+  KeyRound,
   CalendarDays,
   Check,
   ChevronDown,
@@ -89,6 +94,26 @@ type StaffMember = {
   created_at: string;
 };
 type StaffForm = Omit<StaffMember, 'id' | 'created_at'>;
+type ServiceCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  icon: string;
+  sort_order: number;
+};
+type ServiceItem = {
+  id: string;
+  category_id: string;
+  name: string;
+  description: string;
+  credit_cost: number | null;
+  euro_cost: number | null;
+  status: 'Attivo' | 'Inattivo';
+  instructions: string;
+  sort_order: number;
+};
+type ServiceForm = Omit<ServiceItem, 'id' | 'sort_order'>;
 type StoredPractice = {
   id: string;
   protocol: string;
@@ -139,7 +164,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCompact, setSidebarCompact] = useState(false);
 
-  const activeSubtitle = useMemo(() => activePage === 'Dashboard' ? 'Panoramica di sistema' : activePage === 'Nuova Pratica' ? 'Invia una nuova pratica al team back-office.' : activePage === 'Uffici CAF' ? 'Gestisci le sedi CAF che collaborano con il tuo ufficio.' : activePage === 'Clienti' ? 'Gestisci i clienti e tutte le loro informazioni.' : activePage === 'Utenti e Ruoli' ? 'Gestisci accessi, ruoli e assegnazioni del team.' : 'Sezione in preparazione', [activePage]);
+  const activeSubtitle = useMemo(() => activePage === 'Dashboard' ? 'Panoramica di sistema' : activePage === 'Nuova Pratica' ? 'Invia una nuova pratica al team back-office.' : activePage === 'Uffici CAF' ? 'Gestisci le sedi CAF che collaborano con il tuo ufficio.' : activePage === 'Clienti' ? 'Gestisci i clienti e tutte le loro informazioni.' : activePage === 'Utenti e Ruoli' ? 'Gestisci accessi, ruoli e assegnazioni del team.' : activePage === 'Servizi e Prezzi' ? 'Configura il catalogo dei servizi disponibili per le pratiche.' : 'Sezione in preparazione', [activePage]);
   const selectPage = (page: string) => { setActivePage(page); setSidebarOpen(false); };
 
   return (
@@ -160,7 +185,7 @@ function App() {
       {sidebarOpen && <button aria-label="Chiudi menu" onClick={() => setSidebarOpen(false)} className="fixed inset-0 z-30 bg-slate-950/40 lg:hidden" />}
       <div className={`transition-[padding] duration-300 ${sidebarCompact ? 'lg:pl-[84px]' : 'lg:pl-[264px]'}`}>
         <header className="sticky top-0 z-20 flex h-[76px] items-center justify-between border-b border-slate-200 bg-white/95 px-5 backdrop-blur md:px-8"><div className="flex items-center gap-3"><button onClick={() => setSidebarOpen(true)} aria-label="Apri menu" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:hidden"><Menu size={20} /></button><div><p className="hidden text-[11px] font-medium text-slate-400 sm:block">Amministratore Principale</p><p className="text-sm font-semibold text-slate-900">{activePage === 'Dashboard' ? 'Pannello di Controllo' : activePage}</p></div></div><div className="flex items-center gap-4 md:gap-6"><button aria-label="Cerca" className="hidden rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 sm:block"><Search size={18} /></button><button aria-label="Notifiche" className="relative rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"><Bell size={19} /><span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">9</span></button><div className="hidden h-8 w-px bg-slate-200 sm:block" /><div className="flex items-center gap-2.5"><div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#101a2e] text-[11px] font-bold text-white">MS</div><div className="hidden lg:block"><p className="text-xs font-semibold text-slate-800">Md Shawon Ahmed</p><p className="mt-0.5 text-[10px] text-slate-400">shawon.soluzionecentro@gmail.com</p></div><ChevronDown size={15} className="hidden text-slate-400 lg:block" /></div></div></header>
-        <main className="mx-auto max-w-[1440px] p-5 md:p-8"><div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><div className="mb-2 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-blue-600"><SlidersHorizontal size={13} /> Area amministrativa</div><h1 className="text-2xl font-bold tracking-tight text-slate-950 md:text-[28px]">{activePage}</h1><p className="mt-1 text-sm text-slate-500">{activeSubtitle}</p></div>{activePage === 'Dashboard' && <button onClick={() => selectPage('Nuova Pratica')} className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-600/25"><FilePlus2 size={17} /> Nuova Pratica</button>}</div>{activePage === 'Dashboard' ? <Dashboard /> : activePage === 'Nuova Pratica' ? <NewPractice /> : activePage === 'Tutte le Pratiche' ? <AllPractices /> : activePage === 'Uffici CAF' ? <CafOffices /> : activePage === 'Clienti' ? <Clients /> : activePage === 'Utenti e Ruoli' ? <UsersRoles /> : <PlaceholderPage page={activePage} />}</main>
+        <main className="mx-auto max-w-[1440px] p-5 md:p-8"><div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><div className="mb-2 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-blue-600"><SlidersHorizontal size={13} /> Area amministrativa</div><h1 className="text-2xl font-bold tracking-tight text-slate-950 md:text-[28px]">{activePage}</h1><p className="mt-1 text-sm text-slate-500">{activeSubtitle}</p></div>{activePage === 'Dashboard' && <button onClick={() => selectPage('Nuova Pratica')} className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-600/25"><FilePlus2 size={17} /> Nuova Pratica</button>}</div>{activePage === 'Dashboard' ? <Dashboard /> : activePage === 'Nuova Pratica' ? <NewPractice /> : activePage === 'Tutte le Pratiche' ? <AllPractices /> : activePage === 'Uffici CAF' ? <CafOffices /> : activePage === 'Clienti' ? <Clients /> : activePage === 'Utenti e Ruoli' ? <UsersRoles /> : activePage === 'Servizi e Prezzi' ? <ServicesCatalog /> : <PlaceholderPage page={activePage} />}</main>
       </div>
     </div>
   );
@@ -457,6 +482,84 @@ function sortValue(practice: StoredPractice, sortBy: string) {
   return practice.created_at;
 }
 
+function ServicesCatalog() {
+  const [categories, setCategories] = useState<ServiceCategory[]>([]);
+  const [services, setServices] = useState<ServiceItem[]>([]);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingService, setEditingService] = useState<ServiceItem | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState<ServiceForm>({ category_id: '', name: '', description: '', credit_cost: null, euro_cost: null, status: 'Attivo', instructions: '' });
+  const iconMap: Record<string, LucideIcon> = { handshake: Handshake, calculator: Calculator, globe: Globe2, building: Building2, key: KeyRound };
+
+  useEffect(() => {
+    const loadCatalog = async () => {
+      const [categoryResult, serviceResult] = await Promise.all([
+        supabase.from('service_categories').select('id, name, slug, description, icon, sort_order').order('sort_order'),
+        supabase.from('service_catalog').select('id, category_id, name, description, credit_cost, euro_cost, status, instructions, sort_order').order('sort_order'),
+      ]);
+      if (categoryResult.error || serviceResult.error) setErrorMessage('Non è stato possibile caricare il catalogo dei servizi.');
+      const loadedCategories = (categoryResult.data as ServiceCategory[]) ?? [];
+      setCategories(loadedCategories);
+      setServices((serviceResult.data as ServiceItem[]) ?? []);
+      setExpanded(Object.fromEntries(loadedCategories.map((category) => [category.id, false])));
+      setLoading(false);
+    };
+    void loadCatalog();
+  }, []);
+
+  const filteredServices = services.filter((service) => `${service.name} ${service.description}`.toLowerCase().includes(search.toLowerCase()));
+  const getCategoryServices = (categoryId: string) => filteredServices.filter((service) => service.category_id === categoryId).sort((first, second) => first.sort_order - second.sort_order);
+  const toggleAll = (value: boolean) => setExpanded(Object.fromEntries(categories.map((category) => [category.id, value])));
+  const openNewService = (categoryId = categories[0]?.id ?? '') => {
+    setEditingService(null);
+    setForm({ category_id: categoryId, name: '', description: '', credit_cost: null, euro_cost: null, status: 'Attivo', instructions: '' });
+    setErrorMessage('');
+    setModalOpen(true);
+  };
+  const openEditService = (service: ServiceItem) => {
+    setEditingService(service);
+    setForm({ category_id: service.category_id, name: service.name, description: service.description, credit_cost: service.credit_cost, euro_cost: service.euro_cost, status: service.status, instructions: service.instructions });
+    setErrorMessage('');
+    setModalOpen(true);
+  };
+  const closeModal = () => { if (!saving) setModalOpen(false); };
+  const saveService = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSaving(true);
+    setErrorMessage('');
+    const payload = { ...form, credit_cost: form.credit_cost === null || Number.isNaN(form.credit_cost) ? null : form.credit_cost, euro_cost: form.euro_cost === null || Number.isNaN(form.euro_cost) ? null : form.euro_cost };
+    if (editingService) {
+      const { error } = await supabase.from('service_catalog').update(payload).eq('id', editingService.id);
+      if (error) setErrorMessage('Non è stato possibile aggiornare il servizio.');
+      else { setServices((current) => current.map((service) => service.id === editingService.id ? { ...service, ...payload } : service)); setModalOpen(false); }
+    } else {
+      const categoryServices = services.filter((service) => service.category_id === payload.category_id);
+      const { data, error } = await supabase.from('service_catalog').insert({ ...payload, sort_order: categoryServices.length + 1 }).select('id, category_id, name, description, credit_cost, euro_cost, status, instructions, sort_order').maybeSingle();
+      if (error || !data) setErrorMessage('Non è stato possibile aggiungere il servizio.');
+      else { setServices((current) => [...current, data as ServiceItem]); setExpanded((current) => ({ ...current, [payload.category_id]: true })); setModalOpen(false); }
+    }
+    setSaving(false);
+  };
+  const updateService = async (service: ServiceItem, changes: Partial<ServiceItem>) => {
+    const { error } = await supabase.from('service_catalog').update(changes).eq('id', service.id);
+    if (error) { setErrorMessage('Non è stato possibile salvare la modifica.'); return; }
+    setServices((current) => current.map((item) => item.id === service.id ? { ...item, ...changes } : item));
+  };
+  const removeService = async (service: ServiceItem) => {
+    if (!window.confirm(`Eliminare ${service.name}?`)) return;
+    const { error } = await supabase.from('service_catalog').delete().eq('id', service.id);
+    if (error) { setErrorMessage('Non è stato possibile eliminare il servizio.'); return; }
+    setServices((current) => current.filter((item) => item.id !== service.id));
+  };
+  const formatEuro = (value: number | null) => value === null ? '—' : `€${value.toFixed(2).replace('.', ',')}`;
+
+  return <section><div className="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-sm text-slate-500">{categories.length} categorie · {services.length} servizi totali</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => toggleAll(true)} className="px-3 py-2 text-xs font-semibold text-slate-600 transition hover:text-blue-600">Espandi tutte</button><button type="button" onClick={() => toggleAll(false)} className="px-3 py-2 text-xs font-semibold text-slate-600 transition hover:text-blue-600">Comprimi tutte</button><button type="button" onClick={() => openNewService()} className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700"><Plus size={17} /> Nuovo Servizio</button></div></div><label className="relative mb-5 block"><Search size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cerca un servizio per nome..." className="input pl-10" /></label>{errorMessage && <p role="alert" className="mb-4 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700">{errorMessage}</p>}{loading ? <div className="flex min-h-[320px] items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm text-slate-400">Caricamento servizi...</div> : <div className="space-y-3">{categories.map((category) => { const categoryServices = getCategoryServices(category.id); const allCategoryServices = services.filter((service) => service.category_id === category.id); const activeCount = allCategoryServices.filter((service) => service.status === 'Attivo').length; const isOpen = expanded[category.id] || search.trim().length > 0; const Icon = iconMap[category.icon] ?? FolderKanban; return <div key={category.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><button type="button" onClick={() => setExpanded((current) => ({ ...current, [category.id]: !isOpen }))} className="flex min-w-0 items-center gap-4 text-left"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600"><Icon size={19} /></span><span className="min-w-0"><span className="block text-sm font-semibold text-slate-900">{category.name}</span><span className="mt-1 block truncate text-xs text-slate-400">{category.description}</span></span></button><div className="flex items-center justify-between gap-4 sm:justify-end"><span className="whitespace-nowrap rounded-full bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600">{allCategoryServices.length} servizi{activeCount !== allCategoryServices.length ? ` · ${activeCount} attivi` : ''}</span><button type="button" onClick={() => openNewService(category.id)} className="hidden text-xs font-medium text-slate-400 transition hover:text-blue-600 sm:block">Aggiungi servizio</button><button type="button" onClick={() => setExpanded((current) => ({ ...current, [category.id]: !isOpen }))} aria-label={isOpen ? 'Comprimi categoria' : 'Espandi categoria'} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-700">{isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</button></div></div>{isOpen && <div className="border-t border-slate-100">{categoryServices.length === 0 ? <p className="px-5 py-8 text-center text-sm text-slate-400">Nessun servizio trovato in questa categoria.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[950px] text-left"><thead className="bg-slate-50/70"><tr className="border-b border-slate-100 text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400"><th className="px-5 py-3">Servizio</th><th className="px-4 py-3">Costo (crediti)</th><th className="px-4 py-3">Costo (€)</th><th className="px-4 py-3">Stato</th><th className="px-4 py-3">Istruzioni</th><th className="px-4 py-3 text-right">Azioni</th></tr></thead><tbody className="divide-y divide-slate-100">{categoryServices.map((service) => <tr key={service.id} className="transition hover:bg-blue-50/20"><td className="max-w-[390px] px-5 py-3.5"><p className="text-xs font-semibold text-slate-800">{service.name}</p><p className="mt-1 text-[11px] leading-4 text-slate-400">{service.description}</p></td><td className="px-4 py-3.5 text-xs font-semibold text-slate-700">{service.credit_cost === null ? 'Non configurato' : service.credit_cost}</td><td className="px-4 py-3.5 text-xs text-slate-600">{formatEuro(service.euro_cost)}</td><td className="px-4 py-3.5"><button type="button" onClick={() => void updateService(service, { status: service.status === 'Attivo' ? 'Inattivo' : 'Attivo' })} className={`text-xs font-semibold ${service.status === 'Attivo' ? 'text-emerald-600' : 'text-slate-400'}`}>{service.status}</button></td><td className="px-4 py-3.5 text-xs">{service.instructions ? <span className="text-blue-600">Configurate</span> : <span className="text-slate-400">Nessuna</span>}</td><td className="px-4 py-3.5"><div className="flex justify-end gap-1"><button type="button" onClick={() => openEditService(service)} aria-label={`Modifica ${service.name}`} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-blue-50 hover:text-blue-600"><Pencil size={16} /></button><button type="button" onClick={() => removeService(service)} aria-label={`Elimina ${service.name}`} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"><Trash2 size={16} /></button></div></td></tr>)}</tbody></table></div>}<button type="button" onClick={() => openNewService(category.id)} className="flex items-center gap-2 border-t border-slate-100 px-5 py-3.5 text-sm font-semibold text-blue-600 transition hover:bg-blue-50/40"><Plus size={16} /> Aggiungi servizio in questa categoria</button></div>}</div>; })}</div>}{modalOpen && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><div role="dialog" aria-modal="true" aria-labelledby="service-modal-title" className="w-full max-w-[620px] rounded-2xl bg-white p-6 shadow-2xl sm:p-7"><div className="mb-5 flex items-center justify-between"><h2 id="service-modal-title" className="text-xl font-bold text-slate-900">{editingService ? 'Modifica Servizio' : 'Nuovo Servizio'}</h2><button type="button" onClick={closeModal} aria-label="Chiudi" className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"><X size={19} /></button></div><form onSubmit={saveService} className="space-y-4"><Field label="Categoria"><select required value={form.category_id} onChange={(event) => setForm((current) => ({ ...current, category_id: event.target.value }))} className="input">{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></Field><Field label="Nome servizio"><input required value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} className="input" /></Field><Field label="Descrizione"><input value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} className="input" /></Field><div className="grid gap-4 sm:grid-cols-2"><Field label="Costo in crediti"><input type="number" min="0" value={form.credit_cost ?? ''} onChange={(event) => setForm((current) => ({ ...current, credit_cost: event.target.value === '' ? null : Number(event.target.value) }))} className="input" placeholder="Non configurato" /></Field><Field label="Costo in euro"><input type="number" min="0" step="0.01" value={form.euro_cost ?? ''} onChange={(event) => setForm((current) => ({ ...current, euro_cost: event.target.value === '' ? null : Number(event.target.value) }))} className="input" placeholder="Non configurato" /></Field></div><div className="grid gap-4 sm:grid-cols-2"><Field label="Stato"><select value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value as ServiceItem['status'] }))} className="input"><option>Attivo</option><option>Inattivo</option></select></Field><Field label="Istruzioni"><input value={form.instructions} onChange={(event) => setForm((current) => ({ ...current, instructions: event.target.value }))} className="input" placeholder="Nessuna" /></Field></div><div className="flex justify-end gap-3 border-t border-slate-100 pt-5"><button type="button" onClick={closeModal} className="px-4 py-2.5 text-sm font-semibold text-slate-500 transition hover:text-slate-900">Annulla</button><button disabled={saving} type="submit" className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60">{saving ? 'Salvataggio...' : 'Salva servizio'}</button></div></form></div></div>}</section>;
+}
+
 function NewPractice() {
   const [client, setClient] = useState('');
   const [category, setCategory] = useState('');
@@ -469,6 +572,20 @@ function NewPractice() {
   const [documents, setDocuments] = useState<DocumentFiles>(emptyDocuments);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [serviceCategories, setServiceCategories] = useState<ServiceCategory[]>([]);
+  const [availableServices, setAvailableServices] = useState<ServiceItem[]>([]);
+
+  useEffect(() => {
+    const loadServices = async () => {
+      const [categoryResult, serviceResult] = await Promise.all([
+        supabase.from('service_categories').select('id, name, slug, description, icon, sort_order').order('sort_order'),
+        supabase.from('service_catalog').select('id, category_id, name, description, credit_cost, euro_cost, status, instructions, sort_order').eq('status', 'Attivo').order('sort_order'),
+      ]);
+      setServiceCategories((categoryResult.data as ServiceCategory[]) ?? []);
+      setAvailableServices((serviceResult.data as ServiceItem[]) ?? []);
+    };
+    void loadServices();
+  }, []);
 
   const handleFile = (key: DocumentKey, event: ChangeEvent<HTMLInputElement>) => setDocuments((current) => ({ ...current, [key]: event.target.files?.[0] ?? null }));
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -484,7 +601,7 @@ function NewPractice() {
   };
 
   return <form onSubmit={handleSubmit} className="mx-auto max-w-[1040px] rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7 md:p-8"><div className="mb-7 flex items-start justify-between border-b border-slate-100 pb-5"><div><h2 className="text-xl font-bold tracking-tight text-slate-950">Nuova Pratica</h2><p className="mt-1 text-sm text-slate-500">Ufficio CAF: <span className="font-medium text-slate-700">CAF Roma Eur</span></p></div><button type="button" className="hidden items-center gap-1.5 text-xs font-medium text-slate-500 transition hover:text-blue-600 sm:flex"><UserRound size={15} /> Nuovo cliente</button></div>
-    <div className="space-y-6"><Field label="Cliente"><select required value={client} onChange={(event) => setClient(event.target.value)} className="input"><option value="">Seleziona un cliente...</option><option>Md Shawon Ahmed</option><option>Niaj Mohahbd</option><option>Maria Rossi</option></select></Field><Field label="Categoria"><select required value={category} onChange={(event) => { setCategory(event.target.value); setService(''); }} className="input"><option value="">Seleziona una categoria...</option><option>Immigrazione</option><option>Previdenza</option><option>Fiscale</option><option>Servizi al cittadino</option></select></Field><div className="grid gap-6 md:grid-cols-2"><Field label="Servizio"><select required disabled={!category} value={service} onChange={(event) => setService(event.target.value)} className="input disabled:bg-slate-50 disabled:text-slate-400"><option value="">{category ? 'Seleziona un servizio...' : 'Prima seleziona una categoria'}</option><option>Permesso di Soggiorno</option><option>Rinnovo Documenti</option><option>Assegno Unico e Universale (AUU)</option><option>Pagamenti PagoPA e Bollettini</option></select></Field><Field label="Priorità"><select value={priority} onChange={(event) => setPriority(event.target.value)} className="input"><option>Normale</option><option>Urgente</option></select></Field></div><Field label="Scadenza (opzionale)"><input type="date" value={deadline} onChange={(event) => setDeadline(event.target.value)} className="input" /></Field><Field label="Descrizione / Note"><textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={4} placeholder="Aggiungi dettagli per il team back-office..." className="input resize-y" /></Field>
+    <div className="space-y-6"><Field label="Cliente"><select required value={client} onChange={(event) => setClient(event.target.value)} className="input"><option value="">Seleziona un cliente...</option><option>Md Shawon Ahmed</option><option>Niaj Mohahbd</option><option>Maria Rossi</option></select></Field><Field label="Categoria"><select required value={category} onChange={(event) => { setCategory(event.target.value); setService(''); }} className="input"><option value="">Seleziona una categoria...</option>{serviceCategories.map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}</select></Field><div className="grid gap-6 md:grid-cols-2"><Field label="Servizio"><select required disabled={!category} value={service} onChange={(event) => setService(event.target.value)} className="input disabled:bg-slate-50 disabled:text-slate-400"><option value="">{category ? 'Seleziona un servizio...' : 'Prima seleziona una categoria'}</option>{availableServices.filter((item) => serviceCategories.find((categoryItem) => categoryItem.name === category)?.id === item.category_id).map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}</select></Field><Field label="Priorità"><select value={priority} onChange={(event) => setPriority(event.target.value)} className="input"><option>Normale</option><option>Urgente</option></select></Field></div><Field label="Scadenza (opzionale)"><input type="date" value={deadline} onChange={(event) => setDeadline(event.target.value)} className="input" /></Field><Field label="Descrizione / Note"><textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={4} placeholder="Aggiungi dettagli per il team back-office..." className="input resize-y" /></Field>
       <section className="rounded-xl border border-blue-200 bg-blue-50/40 p-4 sm:p-5"><div className="flex items-center gap-2 text-sm font-semibold text-slate-900"><CircleDollarSign size={18} className="text-blue-600" /> Importo Ricevuto dal Cliente (€)</div><p className="mt-2 text-xs leading-5 text-slate-500">Registra l’importo effettivamente ricevuto dal tuo cliente. Questo importo è indipendente dal costo interno in crediti e non viene derivato automaticamente.</p><div className="mt-4 grid gap-4 md:grid-cols-2"><Field label="Importo (€)"><input type="text" inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="0,00" className="input bg-white" /></Field><Field label="Stato Pagamento Cliente"><select value={paymentStatus} onChange={(event) => setPaymentStatus(event.target.value)} className="input bg-white"><option>Nessun importo</option><option>Parziale</option><option>Pagato</option></select></Field></div></section>
       <section className="rounded-xl border border-indigo-200 bg-indigo-50/40 p-4 sm:p-5"><div className="flex items-center gap-2 text-sm font-semibold text-slate-900"><Check size={18} className="text-blue-600" /> Pratica Interna</div><p className="mt-2 text-xs leading-5 text-slate-600">Questa pratica verrà creata come <strong>pratica interna</strong> per il tuo ufficio. Non è richiesto alcun addebito di crediti. Il prezzo del servizio viene salvato come riferimento storico ma non viene addebitato.</p></section>
       <section><div><h3 className="text-sm font-bold text-slate-900">Documenti</h3><p className="mt-1 text-xs leading-5 text-slate-500">Carica i documenti del cliente nelle categorie appropriate. Formati supportati: PDF, JPG, PNG. Massimo 15 MB per file.</p></div><div className="mt-4 grid gap-3 sm:grid-cols-2">{documentTypes.map(({ key, label, icon: Icon }) => <DocumentUpload key={key} id={`document-${key}`} label={label} icon={Icon} file={documents[key]} onChange={(event) => handleFile(key, event)} />)}</div></section>
