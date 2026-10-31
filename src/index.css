@@ -24,8 +24,36 @@ body {
   min-height: 100vh;
 }
 
-button {
+button,
+input,
+select,
+textarea {
   font: inherit;
+}
+
+.input {
+  width: 100%;
+  border: 1px solid #dbe3ee;
+  border-radius: 9px;
+  background: #ffffff;
+  padding: 11px 13px;
+  color: #0f172a;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.input::placeholder {
+  color: #94a3b8;
+}
+
+.input:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgb(96 165 250 / 0.14);
+}
+
+.input:disabled {
+  cursor: not-allowed;
 }
 
 ::-webkit-scrollbar {
