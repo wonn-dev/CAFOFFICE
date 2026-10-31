@@ -179,7 +179,7 @@ type StoredPractice = {
 const navGroups: { label: string; items: NavItem[] }[] = [
   { label: 'Operatività', items: [{ label: 'Dashboard', icon: LayoutDashboard }, { label: 'Nuova Pratica', icon: FilePlus2 }, { label: 'Tutte le Pratiche', icon: ClipboardList }, { label: 'Il Mio Lavoro', icon: BriefcaseBusiness }] },
   { label: 'Organizzazione', items: [{ label: 'Uffici CAF', icon: FolderKanban }, { label: 'Clienti', icon: UsersRound }, { label: 'Utenti e Ruoli', icon: ShieldCheck }, { label: 'Servizi e Prezzi', icon: Wrench }, { label: 'Gestione Crediti', icon: CircleDollarSign }] },
-  { label: 'Controllo', items: [{ label: 'Agenda', icon: CalendarDays }, { label: 'Statistiche', icon: Gauge }, { label: 'Impostazioni', icon: Settings }] },
+  { label: 'Controllo', items: [{ label: 'Agenda', icon: CalendarDays }, { label: 'Impostazioni', icon: Settings }] },
 ];
 
 const statistics = [
