@@ -56,29 +56,19 @@ type CafOffice = {
 type OfficeForm = Omit<CafOffice, 'id' | 'created_at'>;
 type StoredPractice = {
   id: string;
+  protocol: string;
   client_name: string;
+  tax_code: string;
   category: string;
   service: string;
   deadline: string | null;
   priority: 'Urgente' | 'Normale';
   payment_status: string;
   office: string;
-  status: PracticeStatus;
-  created_at: string;
-  protocol?: string;
-};
-
-type Practice = {
-  protocol: string;
-  client: string;
-  taxCode: string;
-  service: string;
-  office: string;
   operator: string;
   status: PracticeStatus;
-  priority: 'Urgente' | 'Normale';
-  deadline: string;
-  overdue?: boolean;
+  overdue: boolean;
+  created_at: string;
 };
 
 const navGroups: { label: string; items: NavItem[] }[] = [
@@ -97,29 +87,7 @@ const statistics = [
   { label: 'Scadute', value: '10', icon: AlertTriangle, tone: 'red' },
 ];
 
-const practices: Practice[] = [
-  { protocol: 'PRAT-1016', client: 'Niaj Mohahbd', taxCode: 'MHNMNJ97L25Z249F', service: 'Prenotazione Appuntamenti Questura / Prefettura', office: 'CAF Roma Eur', operator: '—', status: 'Nuova', priority: 'Urgente', deadline: '29 ott 2026', overdue: true },
-  { protocol: 'PRAT-1015', client: 'Md Shawon Ahmed', taxCode: 'HJJKGHYUUUJH', service: 'Assegno Unico e Universale (AUU)', office: 'CAF Roma Eur', operator: '—', status: 'Completata', priority: 'Normale', deadline: '03 nov 2026' },
-  { protocol: 'PRAT-1014', client: 'Md Shawon Ahmed', taxCode: 'HJJKGHYUUUJH', service: 'Assegno Unico e Universale (AUU)', office: 'CAF Roma Eur', operator: '—', status: 'Annullata', priority: 'Normale', deadline: '11 ott 2026' },
-  { protocol: 'PRAT-1013', client: 'Md Shawon Ahmed', taxCode: 'HJJKGHYUUUJH', service: 'Pagamenti PagoPA e Bollettini', office: 'CAF Roma Eur', operator: '—', status: 'Annullata', priority: 'Normale', deadline: '15 nov 2026' },
-  { protocol: 'PRAT-1012', client: 'Md Shawon Ahmed', taxCode: 'HJJKGHYUUUJH', service: 'Pagamenti PagoPA e Bollettini', office: 'CAF Roma Eur', operator: '—', status: 'Nuova', priority: 'Normale', deadline: '15 nov 2026' },
-];
-
 const toneStyles: Record<string, string> = { blue: 'bg-blue-50 text-blue-600', cyan: 'bg-cyan-50 text-cyan-600', amber: 'bg-amber-50 text-amber-600', orange: 'bg-orange-50 text-orange-600', violet: 'bg-sky-50 text-sky-600', green: 'bg-emerald-50 text-emerald-600', red: 'bg-red-50 text-red-600' };
-
-const demoRows: StoredPractice[] = practices.map((practice, index) => ({
-  id: `demo-${practice.protocol}`,
-  protocol: practice.protocol,
-  client_name: practice.client,
-  category: 'Servizio al cittadino',
-  service: practice.service,
-  deadline: index === 0 ? '2026-10-29' : index === 1 ? '2026-11-03' : index === 2 ? '2026-10-11' : '2026-11-15',
-  priority: practice.priority,
-  payment_status: 'Nessun importo',
-  office: practice.office,
-  status: practice.status,
-  created_at: `2026-10-${String(31 - index).padStart(2, '0')}T09:00:00.000Z`,
-}));
 
 const documentTypes: { key: DocumentKey; label: string; icon: LucideIcon }[] = [
   { key: 'permesso', label: 'Permesso di Soggiorno', icon: FileStack },
@@ -240,7 +208,23 @@ function CafOffices() {
 }
 
 function Dashboard() {
-  return <><section className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">{statistics.map(({ label, value, icon: Icon, tone }) => <div key={label} className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"><div className="mb-4 flex items-start justify-between gap-2"><p className="min-h-8 text-[11px] font-medium leading-4 text-slate-500">{label}</p><span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${toneStyles[tone]}`}><Icon size={15} /></span></div><p className="text-[26px] font-semibold leading-none tracking-tight text-slate-950">{value}</p></div>)}</section><section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="flex flex-col justify-between gap-3 border-b border-slate-100 px-5 py-5 sm:flex-row sm:items-center md:px-6"><div><h2 className="text-base font-semibold text-slate-950">Pratiche Recenti</h2><p className="mt-1 text-xs text-slate-400">Le ultime attività registrate nel sistema</p></div><button className="flex items-center gap-1 text-xs font-semibold text-blue-600 transition hover:text-blue-800">Vedi tutte <ArrowRight size={14} /></button></div><div className="overflow-x-auto"><table className="w-full min-w-[980px] text-left"><thead className="bg-slate-50/80"><tr className="border-b border-slate-100 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400"><th className="px-5 py-3.5 md:px-6">Protocollo</th><th className="px-4 py-3.5">Cliente</th><th className="px-4 py-3.5">Servizio</th><th className="px-4 py-3.5">Ufficio CAF</th><th className="px-4 py-3.5">Operatore</th><th className="px-4 py-3.5">Stato</th><th className="px-4 py-3.5">Priorità</th><th className="px-4 py-3.5">Scadenza</th></tr></thead><tbody className="divide-y divide-slate-100">{practices.map((practice) => <tr key={practice.protocol} className="group transition hover:bg-blue-50/30"><td className="px-5 py-4 md:px-6"><span className="text-xs font-bold text-slate-800">{practice.protocol}</span></td><td className="px-4 py-4"><p className="whitespace-nowrap text-xs font-medium capitalize text-slate-700">{practice.client}</p><p className="mt-1 text-[10px] text-slate-400">{practice.taxCode}</p></td><td className="max-w-[245px] px-4 py-4 text-xs leading-5 text-slate-600">{practice.service}</td><td className="px-4 py-4 text-xs text-slate-600">{practice.office}</td><td className="px-4 py-4 text-xs text-slate-500">{practice.operator}</td><td className="px-4 py-4"><StatusBadge status={practice.status} /></td><td className="px-4 py-4"><span className={`rounded-md px-2 py-1 text-[10px] font-semibold ${practice.priority === 'Urgente' ? 'bg-red-50 text-red-600 ring-1 ring-inset ring-red-100' : 'bg-slate-100 text-slate-500'}`}>{practice.priority}</span></td><td className={`whitespace-nowrap px-4 py-4 text-xs font-medium ${practice.overdue ? 'text-red-600' : 'text-slate-500'}`}>{practice.overdue && <AlertTriangle size={12} className="mr-1 inline" />}{practice.deadline}</td></tr>)}</tbody></table></div><div className="flex items-center justify-between border-t border-slate-100 px-5 py-4 md:px-6"><p className="text-xs text-slate-400">Visualizzate <span className="font-semibold text-slate-600">5</span> di <span className="font-semibold text-slate-600">16</span> pratiche</p><button className="text-xs font-semibold text-blue-600 hover:text-blue-800">Apri archivio completo</button></div></section></>;
+  const [rows, setRows] = useState<StoredPractice[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    const loadRecentPractices = async () => {
+      const { data, error: queryError } = await supabase.from('pratiche').select('id, protocol, client_name, tax_code, category, service, deadline, priority, payment_status, office, operator, status, overdue, created_at').order('created_at', { ascending: false }).limit(5);
+      if (queryError) setError(true);
+      else setRows((data as StoredPractice[]) ?? []);
+      setLoading(false);
+    };
+    void loadRecentPractices();
+  }, []);
+
+  const formatDate = (value: string | null) => value ? new Intl.DateTimeFormat('it-IT', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value)) : '—';
+
+  return <><section className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">{statistics.map(({ label, value, icon: Icon, tone }) => <div key={label} className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"><div className="mb-4 flex items-start justify-between gap-2"><p className="min-h-8 text-[11px] font-medium leading-4 text-slate-500">{label}</p><span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${toneStyles[tone]}`}><Icon size={15} /></span></div><p className="text-[26px] font-semibold leading-none tracking-tight text-slate-950">{value}</p></div>)}</section><section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="flex flex-col justify-between gap-3 border-b border-slate-100 px-5 py-5 sm:flex-row sm:items-center md:px-6"><div><h2 className="text-base font-semibold text-slate-950">Pratiche Recenti</h2><p className="mt-1 text-xs text-slate-400">Le ultime attività registrate nel sistema</p></div><button className="flex items-center gap-1 text-xs font-semibold text-blue-600 transition hover:text-blue-800">Vedi tutte <ArrowRight size={14} /></button></div>{loading ? <div className="flex min-h-[260px] items-center justify-center text-sm text-slate-400">Caricamento pratiche...</div> : error ? <div className="flex min-h-[260px] items-center justify-center text-sm text-red-600">Non è stato possibile caricare le pratiche.</div> : <div className="overflow-x-auto"><table className="w-full min-w-[980px] text-left"><thead className="bg-slate-50/80"><tr className="border-b border-slate-100 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400"><th className="px-5 py-3.5 md:px-6">Protocollo</th><th className="px-4 py-3.5">Cliente</th><th className="px-4 py-3.5">Servizio</th><th className="px-4 py-3.5">Ufficio CAF</th><th className="px-4 py-3.5">Operatore</th><th className="px-4 py-3.5">Stato</th><th className="px-4 py-3.5">Priorità</th><th className="px-4 py-3.5">Scadenza</th></tr></thead><tbody className="divide-y divide-slate-100">{rows.map((practice) => <tr key={practice.id} className="group transition hover:bg-blue-50/30"><td className="px-5 py-4 md:px-6"><span className="text-xs font-bold text-slate-800">{practice.protocol}</span></td><td className="px-4 py-4"><p className="whitespace-nowrap text-xs font-medium capitalize text-slate-700">{practice.client_name}</p><p className="mt-1 text-[10px] text-slate-400">{practice.tax_code}</p></td><td className="max-w-[245px] px-4 py-4 text-xs leading-5 text-slate-600">{practice.service}</td><td className="px-4 py-4 text-xs text-slate-600">{practice.office}</td><td className="px-4 py-4 text-xs text-slate-500">{practice.operator}</td><td className="px-4 py-4"><StatusBadge status={practice.status} /></td><td className="px-4 py-4"><span className={`rounded-md px-2 py-1 text-[10px] font-semibold ${practice.priority === 'Urgente' ? 'bg-red-50 text-red-600 ring-1 ring-inset ring-red-100' : 'bg-slate-100 text-slate-500'}`}>{practice.priority}</span></td><td className={`whitespace-nowrap px-4 py-4 text-xs font-medium ${practice.overdue ? 'text-red-600' : 'text-slate-500'}`}>{practice.overdue && <AlertTriangle size={12} className="mr-1 inline" />}{formatDate(practice.deadline)}</td></tr>)}</tbody></table></div>}<div className="flex items-center justify-between border-t border-slate-100 px-5 py-4 md:px-6"><p className="text-xs text-slate-400">Visualizzate <span className="font-semibold text-slate-600">{rows.length}</span> pratiche recenti</p><button className="text-xs font-semibold text-blue-600 hover:text-blue-800">Apri archivio completo</button></div></section></>;
 }
 
 function AllPractices() {
@@ -253,7 +237,7 @@ function AllPractices() {
   useEffect(() => {
     let active = true;
     const loadPractices = async () => {
-      const { data, error: queryError } = await supabase.from('practices').select('id, client_name, category, service, deadline, priority, payment_status, office, status, created_at').order('created_at', { ascending: false });
+      const { data, error: queryError } = await supabase.from('pratiche').select('id, protocol, client_name, tax_code, category, service, deadline, priority, payment_status, office, operator, status, overdue, created_at').order('created_at', { ascending: false });
       if (!active) return;
       if (queryError) { setError(true); setLoading(false); return; }
       setRows((data as StoredPractice[]) ?? []);
@@ -263,7 +247,7 @@ function AllPractices() {
     return () => { active = false; };
   }, []);
 
-  const allRows = useMemo(() => [...demoRows, ...rows], [rows]);
+  const allRows = useMemo(() => rows, [rows]);
   const sortedRows = useMemo(() => [...allRows].sort((first, second) => {
     const firstValue = sortValue(first, sortBy);
     const secondValue = sortValue(second, sortBy);
@@ -272,7 +256,7 @@ function AllPractices() {
 
   const formatDate = (value: string | null) => value ? new Intl.DateTimeFormat('it-IT', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value)) : '—';
 
-  return <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="flex flex-col gap-4 border-b border-slate-100 px-5 py-5 md:flex-row md:items-center md:justify-between md:px-6"><div><h2 className="text-base font-semibold text-slate-950">Tutte le Pratiche</h2><p className="mt-1 text-xs text-slate-400">Tutte le pratiche create nel sistema</p></div><div className="flex flex-col gap-2 sm:flex-row sm:items-center"><label className="flex items-center gap-2 text-xs font-medium text-slate-500">Ordina per<select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-blue-400"><option value="protocol">Protocollo</option><option value="service">Servizio</option><option value="client">Cliente</option><option value="created_at">Data</option><option value="office">Ufficio CAF</option></select></label><button type="button" onClick={() => setAscending((current) => !current)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-600">{ascending ? 'Crescente' : 'Decrescente'}</button></div></div>{loading ? <div className="flex min-h-[260px] items-center justify-center text-sm text-slate-400">Caricamento pratiche...</div> : error ? <div className="flex min-h-[260px] items-center justify-center px-6 text-center text-sm text-red-600">Non è stato possibile caricare le pratiche.</div> : sortedRows.length === 0 ? <div className="flex min-h-[260px] items-center justify-center px-6 text-center"><div><div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600"><ClipboardList size={22} /></div><p className="text-sm font-semibold text-slate-800">Nessuna pratica ancora creata</p><p className="mt-1 text-xs text-slate-400">Le pratiche salvate dalla schermata Nuova Pratica appariranno qui.</p></div></div> : <div className="overflow-x-auto"><table className="w-full min-w-[1120px] text-left"><thead className="bg-slate-50/80"><tr className="border-b border-slate-100 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400"><th className="px-5 py-3.5 md:px-6">Protocollo</th><th className="px-4 py-3.5">Cliente</th><th className="px-4 py-3.5">Servizio</th><th className="px-4 py-3.5">Origine</th><th className="px-4 py-3.5">Ufficio CAF</th><th className="px-4 py-3.5">Operatore</th><th className="px-4 py-3.5">Stato</th><th className="px-4 py-3.5">Priorità</th><th className="px-4 py-3.5">Scadenza</th></tr></thead><tbody className="divide-y divide-slate-100">{sortedRows.map((practice) => <tr key={practice.id} className="transition hover:bg-blue-50/30"><td className="px-5 py-4 md:px-6"><span className="text-xs font-bold text-slate-800">{practice.protocol ?? `PRAT-${practice.id.slice(0, 8).toUpperCase()}`}</span><p className="mt-1 text-[10px] text-slate-400">{formatDate(practice.created_at)}</p></td><td className="px-4 py-4"><p className="whitespace-nowrap text-xs font-medium uppercase text-slate-700">{practice.client_name}</p><p className="mt-1 text-[10px] text-slate-400">{practice.category}</p></td><td className="max-w-[245px] px-4 py-4 text-xs leading-5 text-slate-600">{practice.service}</td><td className="px-4 py-4"><span className="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-semibold text-blue-600 ring-1 ring-inset ring-blue-100">Ufficio Interno</span></td><td className="px-4 py-4 text-xs text-slate-600">{practice.office}</td><td className="px-4 py-4 text-xs text-slate-500">—</td><td className="px-4 py-4"><StatusBadge status={practice.status} /></td><td className="px-4 py-4"><span className={`rounded-md px-2 py-1 text-[10px] font-semibold ${practice.priority === 'Urgente' ? 'bg-red-50 text-red-600 ring-1 ring-inset ring-red-100' : 'bg-slate-100 text-slate-500'}`}>{practice.priority}</span></td><td className="whitespace-nowrap px-4 py-4 text-xs font-medium text-slate-500">{formatDate(practice.deadline)}</td></tr>)}</tbody></table></div>}<div className="border-t border-slate-100 px-5 py-4 md:px-6"><p className="text-xs text-slate-400">Visualizzate <span className="font-semibold text-slate-600">{sortedRows.length}</span> pratiche</p></div></section>;
+  return <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="flex flex-col gap-4 border-b border-slate-100 px-5 py-5 md:flex-row md:items-center md:justify-between md:px-6"><div><h2 className="text-base font-semibold text-slate-950">Tutte le Pratiche</h2><p className="mt-1 text-xs text-slate-400">Tutte le pratiche create nel sistema</p></div><div className="flex flex-col gap-2 sm:flex-row sm:items-center"><label className="flex items-center gap-2 text-xs font-medium text-slate-500">Ordina per<select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-blue-400"><option value="protocol">Protocollo</option><option value="service">Servizio</option><option value="client">Cliente</option><option value="created_at">Data</option><option value="office">Ufficio CAF</option></select></label><button type="button" onClick={() => setAscending((current) => !current)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-600">{ascending ? 'Crescente' : 'Decrescente'}</button></div></div>{loading ? <div className="flex min-h-[260px] items-center justify-center text-sm text-slate-400">Caricamento pratiche...</div> : error ? <div className="flex min-h-[260px] items-center justify-center px-6 text-center text-sm text-red-600">Non è stato possibile caricare le pratiche.</div> : sortedRows.length === 0 ? <div className="flex min-h-[260px] items-center justify-center px-6 text-center"><div><div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600"><ClipboardList size={22} /></div><p className="text-sm font-semibold text-slate-800">Nessuna pratica ancora creata</p><p className="mt-1 text-xs text-slate-400">Le pratiche salvate dalla schermata Nuova Pratica appariranno qui.</p></div></div> : <div className="overflow-x-auto"><table className="w-full min-w-[1120px] text-left"><thead className="bg-slate-50/80"><tr className="border-b border-slate-100 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400"><th className="px-5 py-3.5 md:px-6">Protocollo</th><th className="px-4 py-3.5">Cliente</th><th className="px-4 py-3.5">Servizio</th><th className="px-4 py-3.5">Origine</th><th className="px-4 py-3.5">Ufficio CAF</th><th className="px-4 py-3.5">Operatore</th><th className="px-4 py-3.5">Stato</th><th className="px-4 py-3.5">Priorità</th><th className="px-4 py-3.5">Scadenza</th></tr></thead><tbody className="divide-y divide-slate-100">{sortedRows.map((practice) => <tr key={practice.id} className="transition hover:bg-blue-50/30"><td className="px-5 py-4 md:px-6"><span className="text-xs font-bold text-slate-800">{practice.protocol ?? `PRAT-${practice.id.slice(0, 8).toUpperCase()}`}</span><p className="mt-1 text-[10px] text-slate-400">{formatDate(practice.created_at)}</p></td><td className="px-4 py-4"><p className="whitespace-nowrap text-xs font-medium uppercase text-slate-700">{practice.client_name}</p><p className="mt-1 text-[10px] text-slate-400">{practice.category}</p></td><td className="max-w-[245px] px-4 py-4 text-xs leading-5 text-slate-600">{practice.service}</td><td className="px-4 py-4"><span className="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-semibold text-blue-600 ring-1 ring-inset ring-blue-100">Ufficio Interno</span></td><td className="px-4 py-4 text-xs text-slate-600">{practice.office}</td><td className="px-4 py-4 text-xs text-slate-500">{practice.operator}</td><td className="px-4 py-4"><StatusBadge status={practice.status} /></td><td className="px-4 py-4"><span className={`rounded-md px-2 py-1 text-[10px] font-semibold ${practice.priority === 'Urgente' ? 'bg-red-50 text-red-600 ring-1 ring-inset ring-red-100' : 'bg-slate-100 text-slate-500'}`}>{practice.priority}</span></td><td className="whitespace-nowrap px-4 py-4 text-xs font-medium text-slate-500">{formatDate(practice.deadline)}</td></tr>)}</tbody></table></div>}<div className="border-t border-slate-100 px-5 py-4 md:px-6"><p className="text-xs text-slate-400">Visualizzate <span className="font-semibold text-slate-600">{sortedRows.length}</span> pratiche</p></div></section>;
 }
 
 function sortValue(practice: StoredPractice, sortBy: string) {
@@ -302,7 +286,7 @@ function NewPractice() {
     setSaving(true);
     setMessage(null);
     const documentNames = Object.fromEntries(Object.entries(documents).map(([key, file]) => [key, file?.name ?? null]));
-    const { error } = await supabase.from('practices').insert({ client_name: client, category, service, deadline: deadline || null, priority, description, amount_received: Number(amount.replace(',', '.')) || 0, payment_status: paymentStatus, documents: documentNames });
+    const { error } = await supabase.from('pratiche').insert({ client_name: client, category, service, deadline: deadline || null, priority, description, amount_received: Number(amount.replace(',', '.')) || 0, payment_status: paymentStatus, documents: documentNames });
     setSaving(false);
     if (error) { setMessage({ type: 'error', text: 'Non è stato possibile salvare la pratica. Riprova.' }); return; }
     setMessage({ type: 'success', text: 'Pratica creata correttamente e inviata al team back-office.' });
