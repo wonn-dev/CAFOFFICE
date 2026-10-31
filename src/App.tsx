@@ -4,6 +4,7 @@ import {
   ArrowRight,
   Bell,
   BriefcaseBusiness,
+  Building2,
   CalendarDays,
   Check,
   ChevronDown,
@@ -21,10 +22,13 @@ import {
   Menu,
   PanelLeftClose,
   PanelLeftOpen,
+  Pencil,
+  Plus,
   Search,
   Settings,
   ShieldCheck,
   SlidersHorizontal,
+  Trash2,
   Upload,
   UserRound,
   UsersRound,
@@ -39,6 +43,17 @@ type NavItem = { label: string; icon: LucideIcon };
 type PracticeStatus = 'Nuova' | 'In lavorazione' | 'Completata' | 'Annullata';
 type DocumentKey = 'permesso' | 'identita' | 'sanitaria' | 'passaporto' | 'altri';
 type DocumentFiles = Record<DocumentKey, File | null>;
+type CafOffice = {
+  id: string;
+  name: string;
+  address: string;
+  vat_number: string;
+  email: string;
+  phone: string;
+  is_active: boolean;
+  created_at: string;
+};
+type OfficeForm = Omit<CafOffice, 'id' | 'created_at'>;
 type StoredPractice = {
   id: string;
   client_name: string;
@@ -121,7 +136,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCompact, setSidebarCompact] = useState(false);
 
-  const activeSubtitle = useMemo(() => activePage === 'Dashboard' ? 'Panoramica di sistema' : activePage === 'Nuova Pratica' ? 'Invia una nuova pratica al team back-office.' : 'Sezione in preparazione', [activePage]);
+  const activeSubtitle = useMemo(() => activePage === 'Dashboard' ? 'Panoramica di sistema' : activePage === 'Nuova Pratica' ? 'Invia una nuova pratica al team back-office.' : activePage === 'Uffici CAF' ? 'Gestisci le sedi CAF che collaborano con il tuo ufficio.' : 'Sezione in preparazione', [activePage]);
   const selectPage = (page: string) => { setActivePage(page); setSidebarOpen(false); };
 
   return (
@@ -142,10 +157,86 @@ function App() {
       {sidebarOpen && <button aria-label="Chiudi menu" onClick={() => setSidebarOpen(false)} className="fixed inset-0 z-30 bg-slate-950/40 lg:hidden" />}
       <div className={`transition-[padding] duration-300 ${sidebarCompact ? 'lg:pl-[84px]' : 'lg:pl-[264px]'}`}>
         <header className="sticky top-0 z-20 flex h-[76px] items-center justify-between border-b border-slate-200 bg-white/95 px-5 backdrop-blur md:px-8"><div className="flex items-center gap-3"><button onClick={() => setSidebarOpen(true)} aria-label="Apri menu" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:hidden"><Menu size={20} /></button><div><p className="hidden text-[11px] font-medium text-slate-400 sm:block">Amministratore Principale</p><p className="text-sm font-semibold text-slate-900">{activePage === 'Dashboard' ? 'Pannello di Controllo' : activePage}</p></div></div><div className="flex items-center gap-4 md:gap-6"><button aria-label="Cerca" className="hidden rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 sm:block"><Search size={18} /></button><button aria-label="Notifiche" className="relative rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"><Bell size={19} /><span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">9</span></button><div className="hidden h-8 w-px bg-slate-200 sm:block" /><div className="flex items-center gap-2.5"><div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#101a2e] text-[11px] font-bold text-white">MS</div><div className="hidden lg:block"><p className="text-xs font-semibold text-slate-800">Md Shawon Ahmed</p><p className="mt-0.5 text-[10px] text-slate-400">shawon.soluzionecentro@gmail.com</p></div><ChevronDown size={15} className="hidden text-slate-400 lg:block" /></div></div></header>
-        <main className="mx-auto max-w-[1440px] p-5 md:p-8"><div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><div className="mb-2 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-blue-600"><SlidersHorizontal size={13} /> Area amministrativa</div><h1 className="text-2xl font-bold tracking-tight text-slate-950 md:text-[28px]">{activePage}</h1><p className="mt-1 text-sm text-slate-500">{activeSubtitle}</p></div>{activePage === 'Dashboard' && <button onClick={() => selectPage('Nuova Pratica')} className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-600/25"><FilePlus2 size={17} /> Nuova Pratica</button>}</div>{activePage === 'Dashboard' ? <Dashboard /> : activePage === 'Nuova Pratica' ? <NewPractice /> : activePage === 'Tutte le Pratiche' ? <AllPractices /> : <PlaceholderPage page={activePage} />}</main>
+        <main className="mx-auto max-w-[1440px] p-5 md:p-8"><div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><div className="mb-2 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-blue-600"><SlidersHorizontal size={13} /> Area amministrativa</div><h1 className="text-2xl font-bold tracking-tight text-slate-950 md:text-[28px]">{activePage}</h1><p className="mt-1 text-sm text-slate-500">{activeSubtitle}</p></div>{activePage === 'Dashboard' && <button onClick={() => selectPage('Nuova Pratica')} className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-600/25"><FilePlus2 size={17} /> Nuova Pratica</button>}</div>{activePage === 'Dashboard' ? <Dashboard /> : activePage === 'Nuova Pratica' ? <NewPractice /> : activePage === 'Tutte le Pratiche' ? <AllPractices /> : activePage === 'Uffici CAF' ? <CafOffices /> : <PlaceholderPage page={activePage} />}</main>
       </div>
     </div>
   );
+}
+
+function CafOffices() {
+  const [offices, setOffices] = useState<CafOffice[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [formError, setFormError] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingOffice, setEditingOffice] = useState<CafOffice | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [officeForm, setOfficeForm] = useState<OfficeForm>({ name: '', address: '', vat_number: '', email: '', phone: '', is_active: true });
+
+  useEffect(() => {
+    const loadOffices = async () => {
+      const { data, error } = await supabase.from('caf_offices').select('id, name, address, vat_number, email, phone, is_active, created_at').order('name');
+      if (error) setFormError('Non è stato possibile caricare gli uffici.');
+      setOffices((data as CafOffice[]) ?? []);
+      setLoading(false);
+    };
+    void loadOffices();
+  }, []);
+
+  const openNewOffice = () => {
+    setEditingOffice(null);
+    setOfficeForm({ name: '', address: '', vat_number: '', email: '', phone: '', is_active: true });
+    setFormError('');
+    setModalOpen(true);
+  };
+
+  const openEditOffice = (office: CafOffice) => {
+    setEditingOffice(office);
+    setOfficeForm({ name: office.name, address: office.address, vat_number: office.vat_number, email: office.email, phone: office.phone, is_active: office.is_active });
+    setFormError('');
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    if (!saving) setModalOpen(false);
+  };
+
+  const saveOffice = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSaving(true);
+    setFormError('');
+    if (editingOffice) {
+      const { error } = await supabase.from('caf_offices').update(officeForm).eq('id', editingOffice.id);
+      if (error) setFormError('Non è stato possibile aggiornare l’ufficio.');
+      else {
+        setOffices((current) => current.map((office) => office.id === editingOffice.id ? { ...office, ...officeForm } : office));
+        setModalOpen(false);
+      }
+    } else {
+      const { data, error } = await supabase.from('caf_offices').insert(officeForm).select('id, name, address, vat_number, email, phone, is_active, created_at').maybeSingle();
+      if (error || !data) setFormError('Non è stato possibile aggiungere l’ufficio.');
+      else {
+        setOffices((current) => [...current, data as CafOffice].sort((first, second) => first.name.localeCompare(second.name)));
+        setModalOpen(false);
+      }
+    }
+    setSaving(false);
+  };
+
+  const toggleOffice = async (office: CafOffice) => {
+    const nextActive = !office.is_active;
+    const { error } = await supabase.from('caf_offices').update({ is_active: nextActive }).eq('id', office.id);
+    if (error) { setFormError('Non è stato possibile modificare lo stato dell’ufficio.'); return; }
+    setOffices((current) => current.map((item) => item.id === office.id ? { ...item, is_active: nextActive } : item));
+  };
+
+  const removeOffice = async (office: CafOffice) => {
+    if (!window.confirm(`Eliminare ${office.name}?`)) return;
+    const { error } = await supabase.from('caf_offices').delete().eq('id', office.id);
+    if (error) { setFormError('Non è stato possibile eliminare l’ufficio.'); return; }
+    setOffices((current) => current.filter((item) => item.id !== office.id));
+  };
+
+  return <section><div className="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><p className="text-sm text-slate-500"><span className="font-semibold text-slate-700">{offices.length} uffici</span> gestiti dal sistema</p></div><button type="button" onClick={openNewOffice} className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700"><Plus size={17} /> Aggiungi Ufficio</button></div>{formError && <p role="alert" className="mb-4 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700">{formError}</p>}{loading ? <div className="flex min-h-[260px] items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm text-slate-400">Caricamento uffici...</div> : offices.length === 0 ? <div className="flex min-h-[260px] items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white px-6 text-center"><div><Building2 className="mx-auto mb-3 text-blue-600" size={28} /><p className="text-sm font-semibold text-slate-800">Nessun ufficio configurato</p><p className="mt-1 text-xs text-slate-400">Aggiungi il primo ufficio CAF per iniziare.</p></div></div> : <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">{offices.map((office) => <article key={office.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"><div className="flex items-start justify-between gap-3"><div className="flex min-w-0 items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#101a2e] text-white"><Building2 size={19} /></div><div className="min-w-0"><h2 className="truncate text-[15px] font-bold text-slate-900">{office.name}</h2><span className={`mt-1 inline-flex items-center gap-1.5 text-xs font-medium ${office.is_active ? 'text-emerald-600' : 'text-slate-400'}`}><span className={`h-1.5 w-1.5 rounded-full ${office.is_active ? 'bg-emerald-500' : 'bg-slate-400'}`} />{office.is_active ? 'Attivo' : 'Disattivato'}</span></div></div><button type="button" onClick={() => openEditOffice(office)} aria-label={`Modifica ${office.name}`} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-blue-50 hover:text-blue-600"><Pencil size={17} /></button></div><div className="mt-5 space-y-1.5 text-sm leading-5 text-slate-600"><p>{office.address || 'Indirizzo non inserito'}</p>{office.vat_number && <p className="text-slate-400">VAT: {office.vat_number}</p>}{office.email && <p className="break-all">{office.email}</p>}{office.phone && <p>{office.phone}</p>}</div><div className="mt-5 flex gap-2"><button type="button" onClick={() => toggleOffice(office)} className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-600">{office.is_active ? 'Disattiva' : 'Attiva'}</button><button type="button" onClick={() => removeOffice(office)} className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50"><Trash2 size={14} /> Elimina</button></div></article>)}</div>}{modalOpen && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><div role="dialog" aria-modal="true" aria-labelledby="office-modal-title" className="w-full max-w-[520px] rounded-2xl bg-white p-6 shadow-2xl sm:p-7"><div className="mb-5 flex items-center justify-between"><h2 id="office-modal-title" className="text-xl font-bold text-slate-900">{editingOffice ? 'Modifica Ufficio' : 'Nuovo Ufficio'}</h2><button type="button" onClick={closeModal} aria-label="Chiudi" className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"><X size={19} /></button></div><form onSubmit={saveOffice} className="space-y-3"><input required value={officeForm.name} onChange={(event) => setOfficeForm((current) => ({ ...current, name: event.target.value }))} placeholder="Nome ufficio" className="input" /><input value={officeForm.address} onChange={(event) => setOfficeForm((current) => ({ ...current, address: event.target.value }))} placeholder="Indirizzo" className="input" /><input value={officeForm.vat_number} onChange={(event) => setOfficeForm((current) => ({ ...current, vat_number: event.target.value }))} placeholder="Partita IVA / Codice fiscale" className="input" /><div className="grid gap-3 sm:grid-cols-2"><input type="email" value={officeForm.email} onChange={(event) => setOfficeForm((current) => ({ ...current, email: event.target.value }))} placeholder="Email" className="input" /><input value={officeForm.phone} onChange={(event) => setOfficeForm((current) => ({ ...current, phone: event.target.value }))} placeholder="Numero di telefono" className="input" /></div><label className="flex items-center gap-2 py-1 text-sm text-slate-600"><input type="checkbox" checked={officeForm.is_active} onChange={(event) => setOfficeForm((current) => ({ ...current, is_active: event.target.checked }))} className="h-4 w-4 accent-blue-600" /> Attivo</label><div className="flex justify-end gap-3 border-t border-slate-100 pt-5"><button type="button" onClick={closeModal} className="px-4 py-2.5 text-sm font-semibold text-slate-500 transition hover:text-slate-900">Annulla</button><button disabled={saving} type="submit" className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60">{saving ? 'Salvataggio...' : 'Salva'}</button></div></form></div></div>}</section>;
 }
 
 function Dashboard() {
