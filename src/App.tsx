@@ -18,6 +18,8 @@ import {
   Eye,
   ClipboardList,
   Clock3,
+  Download,
+  FileText,
   FileCheck2,
   FilePlus2,
   FileStack,
@@ -52,6 +54,8 @@ type NavItem = { label: string; icon: LucideIcon };
 type PracticeStatus = 'Nuova' | 'In lavorazione' | 'Completata' | 'Annullata';
 type DocumentKey = 'permesso' | 'identita' | 'sanitaria' | 'passaporto' | 'altri';
 type DocumentFiles = Record<DocumentKey, File | null>;
+type StoredDocument = { name: string; path?: string; size?: number; type?: string };
+type StoredPracticeDocuments = Record<string, StoredDocument | string | null>;
 type CafOffice = {
   id: string;
   name: string;
@@ -174,6 +178,9 @@ type StoredPractice = {
   operator: string;
   status: PracticeStatus;
   overdue: boolean;
+  description: string;
+  amount_received: number;
+  documents: StoredPracticeDocuments;
   created_at: string;
 };
 
@@ -472,10 +479,11 @@ function Dashboard() {
   const [rows, setRows] = useState<StoredPractice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [selectedPractice, setSelectedPractice] = useState<StoredPractice | null>(null);
 
   useEffect(() => {
     const loadRecentPractices = async () => {
-      const { data, error: queryError } = await supabase.from('pratiche').select('id, protocol, client_name, tax_code, category, service, deadline, priority, payment_status, office, operator, status, overdue, created_at').order('created_at', { ascending: false }).limit(5);
+      const { data, error: queryError } = await supabase.from('pratiche').select('id, protocol, client_name, tax_code, category, service, deadline, priority, description, amount_received, payment_status, documents, office, operator, status, overdue, created_at').order('created_at', { ascending: false }).limit(5);
       if (queryError) setError(true);
       else setRows((data as StoredPractice[]) ?? []);
       setLoading(false);
@@ -494,11 +502,12 @@ function AllPractices() {
   const [ascending, setAscending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [selectedPractice, setSelectedPractice] = useState<StoredPractice | null>(null);
 
   useEffect(() => {
     let active = true;
     const loadPractices = async () => {
-      const { data, error: queryError } = await supabase.from('pratiche').select('id, protocol, client_name, tax_code, category, service, deadline, priority, payment_status, office, operator, status, overdue, created_at').order('created_at', { ascending: false });
+      const { data, error: queryError } = await supabase.from('pratiche').select('id, protocol, client_name, tax_code, category, service, deadline, priority, description, amount_received, payment_status, documents, office, operator, status, overdue, created_at').order('created_at', { ascending: false });
       if (!active) return;
       if (queryError) { setError(true); setLoading(false); return; }
       setRows((data as StoredPractice[]) ?? []);
