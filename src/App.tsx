@@ -49,6 +49,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { jsPDF } from 'jspdf';
 
 type NavItem = { label: string; icon: LucideIcon };
 type PracticeStatus = 'Nuova' | 'In lavorazione' | 'Completata' | 'Annullata';
@@ -183,6 +184,7 @@ type StoredPractice = {
   amount_received: number;
   documents: StoredPracticeDocuments;
   back_office_document: StoredDocument | null;
+  receipt_document: StoredDocument | null;
   created_at: string;
 };
 
@@ -485,7 +487,7 @@ function Dashboard() {
 
   useEffect(() => {
     const loadRecentPractices = async () => {
-      const { data, error: queryError } = await supabase.from('pratiche').select('id, client_id, protocol, client_name, tax_code, category, service, deadline, priority, description, amount_received, payment_status, documents, back_office_document, office, operator, status, overdue, created_at').order('created_at', { ascending: false }).limit(5);
+      const { data, error: queryError } = await supabase.from('pratiche').select('id, client_id, protocol, client_name, tax_code, category, service, deadline, priority, description, amount_received, payment_status, documents, back_office_document, receipt_document, office, operator, status, overdue, created_at').order('created_at', { ascending: false }).limit(5);
       if (queryError) setError(true);
       else setRows((data as StoredPractice[]) ?? []);
       setLoading(false);
@@ -509,7 +511,7 @@ function AllPractices() {
   useEffect(() => {
     let active = true;
     const loadPractices = async () => {
-      const { data, error: queryError } = await supabase.from('pratiche').select('id, client_id, protocol, client_name, tax_code, category, service, deadline, priority, description, amount_received, payment_status, documents, back_office_document, office, operator, status, overdue, created_at').order('created_at', { ascending: false });
+      const { data, error: queryError } = await supabase.from('pratiche').select('id, client_id, protocol, client_name, tax_code, category, service, deadline, priority, description, amount_received, payment_status, documents, back_office_document, receipt_document, office, operator, status, overdue, created_at').order('created_at', { ascending: false });
       if (!active) return;
       if (queryError) { setError(true); setLoading(false); return; }
       setRows((data as StoredPractice[]) ?? []);
@@ -544,6 +546,10 @@ function PracticeDetailsModal({ practice, onClose, onUpdated }: { practice: Stor
   const [workflowMessage, setWorkflowMessage] = useState('');
   const [clientDetails, setClientDetails] = useState<Client | null>(null);
   const [clientLoading, setClientLoading] = useState(true);
+  const [officeDetails, setOfficeDetails] = useState<CafOffice | null>(null);
+  const [receiptDocument, setReceiptDocument] = useState<StoredDocument | null>(practice.receipt_document);
+  const [receiptUrl, setReceiptUrl] = useState('');
+  const [generatingReceipt, setGeneratingReceipt] = useState(false);
   const documentLabels: Record<string, string> = Object.fromEntries(documentTypes.map((item) => [item.key, item.label]));
   const documents = Object.entries(practice.documents ?? {}).filter(([, value]) => value);
 
@@ -574,6 +580,16 @@ function PracticeDetailsModal({ practice, onClose, onUpdated }: { practice: Stor
 
   useEffect(() => {
     let active = true;
+    const loadOffice = async () => {
+      const { data } = await supabase.from('caf_offices').select('id, name, address, vat_number, email, phone, is_active, created_at').eq('name', practice.office).maybeSingle();
+      if (active) setOfficeDetails((data as CafOffice | null) ?? null);
+    };
+    void loadOffice();
+    return () => { active = false; };
+  }, [practice.office]);
+
+  useEffect(() => {
+    let active = true;
     const loadSignedUrls = async () => {
       const paths = documents.flatMap(([key, value]) => typeof value === 'object' && value?.path ? [{ key, path: value.path }] : []);
       if (paths.length === 0) return;
@@ -598,10 +614,22 @@ function PracticeDetailsModal({ practice, onClose, onUpdated }: { practice: Stor
 
   useEffect(() => {
     setBackOfficeDocument(practice.back_office_document ?? null);
+    setReceiptDocument(practice.receipt_document ?? null);
     setSelectedStatus(practice.status);
     setBackOfficeFile(null);
     setWorkflowMessage('');
-  }, [practice.id, practice.back_office_document, practice.status]);
+  }, [practice.id, practice.back_office_document, practice.receipt_document, practice.status]);
+
+  useEffect(() => {
+    let active = true;
+    const loadReceiptUrl = async () => {
+      if (!receiptDocument?.path) { setReceiptUrl(''); return; }
+      const { data, error } = await supabase.storage.from('practice-receipts').createSignedUrl(receiptDocument.path, 300);
+      if (active) setReceiptUrl(error ? '' : data?.signedUrl ?? '');
+    };
+    void loadReceiptUrl();
+    return () => { active = false; };
+  }, [receiptDocument]);
 
   useEffect(() => {
     let active = true;
@@ -615,6 +643,48 @@ function PracticeDetailsModal({ practice, onClose, onUpdated }: { practice: Stor
   }, [backOfficeDocument]);
 
   const updatePractice = (changes: Partial<StoredPractice>) => onUpdated?.({ ...practice, ...changes });
+  const receiptValue = (value: string | null | undefined) => value?.trim() || '—';
+  const generateReceipt = async () => {
+    setGeneratingReceipt(true);
+    setWorkflowMessage('');
+    const client = clientDetails;
+    const protocol = practice.protocol || `PRAT-${practice.id.slice(0, 8).toUpperCase()}`;
+    const receiptNumber = `RICE-${protocol.replace(/[^a-zA-Z0-9-]/g, '-')}`;
+    const issuedAt = new Date(practice.created_at);
+    const pdf = new jsPDF({ unit: 'mm', format: 'a4' });
+    const left = 18;
+    const right = 192;
+    let y = 20;
+    const line = () => { pdf.setDrawColor(220, 226, 234); pdf.line(left, y, right, y); y += 8; };
+    const heading = (title: string) => { pdf.setFont('helvetica', 'bold'); pdf.setFontSize(11); pdf.setTextColor(15, 23, 42); pdf.text(title, left, y); y += 7; };
+    const field = (label: string, value: string) => { pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9); pdf.setTextColor(100, 116, 139); pdf.text(label, left, y); pdf.setTextColor(30, 41, 59); pdf.text(value, 68, y); y += 5.5; };
+    pdf.setFillColor(16, 26, 46); pdf.rect(0, 0, 210, 12, 'F');
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(16); pdf.setTextColor(16, 26, 46); pdf.text('CAF & Patronato', left, y); y += 6;
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9); pdf.setTextColor(100, 116, 139); pdf.text('Sistema di Gestione Pratiche', left, y); y += 12;
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(16); pdf.setTextColor(15, 23, 42); pdf.text('RICEVUTA PER IL CLIENTE', left, y); y += 9; line();
+    field('Numero ricevuta:', receiptNumber); field('Data emissione:', issuedAt.toLocaleString('it-IT')); field('Protocollo pratica:', protocol); field('Stato pagamento:', receiptValue(practice.payment_status)); y += 3; line();
+    heading('UFFICIO CAF'); field('Denominazione:', officeDetails?.name || practice.office); field('Indirizzo:', officeDetails?.address || '—'); field('Telefono:', officeDetails?.phone || '—'); field('Email:', officeDetails?.email || '—'); y += 3; line();
+    heading('DATI CLIENTE'); field('Nome e cognome:', client ? `${client.first_name} ${client.last_name}` : practice.client_name); field('Codice fiscale:', client?.tax_code || practice.tax_code); field('Telefono:', client?.phone || '—'); field('Email:', client?.email || '—'); field('Indirizzo:', client ? clientAddress(client) : '—'); y += 3; line();
+    heading('SERVIZIO RICHIESTO'); field('Categoria:', practice.category); field('Servizio:', practice.service); field('Descrizione:', practice.description || '—'); field('Data pratica:', issuedAt.toLocaleString('it-IT')); field('Protocollo:', protocol); y += 3; line();
+    heading('PAGAMENTO DEL CLIENTE'); field('Importo ricevuto:', formatAmount(practice.amount_received)); field('Stato pagamento:', receiptValue(practice.payment_status));
+    pdf.setFont('helvetica', 'italic'); pdf.setFontSize(8); pdf.setTextColor(100, 116, 139); pdf.text('La presente ricevuta attesta la presa in carico della pratica e non costituisce quietanza di pagamento.', left, 282, { maxWidth: 174 });
+    const blob = pdf.output('blob');
+    const safeProtocol = protocol.replace(/[^a-zA-Z0-9-]/g, '-');
+    const path = `ricevute/${practice.id}/${crypto.randomUUID()}-${safeProtocol}.pdf`;
+    const { error: uploadError } = await supabase.storage.from('practice-receipts').upload(path, blob, { contentType: 'application/pdf', upsert: false });
+    if (uploadError) { setWorkflowMessage('Non è stato possibile salvare la ricevuta.'); setGeneratingReceipt(false); return; }
+    const metadata: StoredDocument = { name: `${receiptNumber}.pdf`, path, size: blob.size, type: 'application/pdf' };
+    const { error: updateError } = await supabase.from('pratiche').update({ receipt_document: metadata }).eq('id', practice.id);
+    if (updateError) {
+      await supabase.storage.from('practice-receipts').remove([path]);
+      setWorkflowMessage('La ricevuta non è stata collegata alla pratica.');
+    } else {
+      setReceiptDocument(metadata);
+      updatePractice({ receipt_document: metadata });
+      setWorkflowMessage('Ricevuta generata e salvata.');
+    }
+    setGeneratingReceipt(false);
+  };
   const saveStatus = async (nextStatus: PracticeStatus) => {
     setSelectedStatus(nextStatus);
     setSavingStatus(true);
@@ -655,7 +725,7 @@ function PracticeDetailsModal({ practice, onClose, onUpdated }: { practice: Stor
 
   <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5"><div className="mb-4 flex items-center gap-2"><UserRound size={18} className="text-blue-600" /><h3 className="text-sm font-bold text-slate-900">Cliente</h3></div>{clientLoading ? <p className="text-xs text-slate-400">Caricamento dati cliente...</p> : clientDetails ? <div className="grid gap-3 sm:grid-cols-2"><DetailItem label="Nome" value={`${clientDetails.first_name} ${clientDetails.last_name}`} /><DetailItem label="Codice fiscale" value={clientDetails.tax_code} /><DetailItem label="Email" value={clientDetails.email} /><DetailItem label="Telefono" value={clientDetails.phone} /><DetailItem label="Indirizzo" value={clientAddress(clientDetails)} /><DetailItem label="Città" value={clientDetails.city} /><DetailItem label="Provincia" value={clientDetails.province || clientDetails.province_code} /><DetailItem label="Regione" value={clientDetails.region} /><DetailItem label="Paese" value={clientDetails.country} /><DetailItem label="Ufficio" value={clientDetails.office} /></div> : <div className="grid gap-3 sm:grid-cols-2"><DetailItem label="Nome" value={practice.client_name} /><DetailItem label="Codice fiscale" value={practice.tax_code} /></div>}{clientDetails?.notes && <div className="mt-3 rounded-lg bg-slate-50 px-3.5 py-3"><p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">Note cliente</p><p className="mt-1.5 whitespace-pre-wrap text-sm leading-6 text-slate-600">{clientDetails.notes}</p></div>}</section>
 
-  <div className="mt-6 grid gap-4 sm:grid-cols-2"><DetailItem label="Categoria" value={practice.category} /><DetailItem label="Servizio" value={practice.service} /><DetailItem label="Ufficio CAF" value={practice.office} /><DetailItem label="Operatore" value={practice.operator} /><div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3.5"><label className="block"><span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-blue-700">Stato pratica</span><select value={selectedStatus} disabled={savingStatus} onChange={(event) => void saveStatus(event.target.value as PracticeStatus)} className="mt-1.5 w-full rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none focus:border-blue-500 disabled:opacity-60"><option value="Nuova">Nuova</option><option value="In lavorazione">In lavorazione</option><option value="Completata">Completata</option><option value="Annullata">Annullata</option></select></label></div><DetailItem label="Priorità" value={practice.priority} /><DetailItem label="Scadenza" value={practice.deadline ? new Intl.DateTimeFormat('it-IT', { dateStyle: 'long' }).format(new Date(`${practice.deadline}T12:00:00`)) : 'Nessuna'} /><DetailItem label="Pagamento" value={`${practice.payment_status} · ${formatAmount(practice.amount_received)}`} /></div><section className="mt-6 rounded-xl border border-slate-200 bg-slate-50/70 p-4"><h3 className="text-sm font-bold text-slate-900">Descrizione</h3><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">{practice.description || 'Nessuna descrizione inserita.'}</p></section><section className="mt-6 rounded-xl border border-slate-200 bg-slate-50/70 p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><h3 className="text-sm font-bold text-slate-900">Documenti Back-Office</h3><p className="mt-1 text-xs leading-5 text-slate-500">Carica il file finale della pratica. PDF, JPG o PNG, massimo 15 MB.</p></div><label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#101a2e] px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800"><Upload size={14} /> {backOfficeFile ? 'Cambia file' : 'Scegli file'}<input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(event) => setBackOfficeFile(event.target.files?.[0] ?? null)} className="sr-only" /></label></div>{backOfficeFile && <div className="mt-3 flex flex-col gap-2 rounded-lg border border-blue-100 bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-between"><span className="truncate text-xs font-medium text-slate-700">{backOfficeFile.name}</span><button type="button" disabled={uploadingFile} onClick={() => void uploadBackOfficeFile()} className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"><Upload size={14} /> {uploadingFile ? 'Caricamento...' : 'Carica documento'}</button></div>}{backOfficeDocument && <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-emerald-100 bg-emerald-50/60 px-3 py-3"><div className="flex min-w-0 items-center gap-2"><FileCheck2 size={17} className="shrink-0 text-emerald-600" /><span className="truncate text-xs font-semibold text-slate-700">{backOfficeDocument.name}</span></div>{backOfficeUrl ? <a href={backOfficeUrl} target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-white px-2.5 py-2 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200"><Download size={14} /> Apri</a> : <span className="text-[11px] text-slate-400">Preparazione...</span>}</div>}{workflowMessage && <p role="status" className="mt-3 text-xs font-medium text-slate-600">{workflowMessage}</p>}</section><section className="mt-6"><div className="flex items-center justify-between gap-3"><div><h3 className="text-sm font-bold text-slate-900">Documenti caricati</h3><p className="mt-1 text-xs text-slate-500">I collegamenti sono protetti e scadono dopo pochi minuti.</p></div><FileText size={19} className="text-blue-600" /></div>{documents.length === 0 ? <div className="mt-3 rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-400">Nessun documento caricato.</div> : <div className="mt-3 space-y-2">{documents.map(([key, value]) => <div key={key} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-3"><div className="flex min-w-0 items-center gap-3"><FileText size={17} className="shrink-0 text-slate-400" /><div className="min-w-0"><p className="truncate text-xs font-semibold text-slate-800">{documentLabels[key] ?? key}</p><p className="truncate text-[11px] text-slate-500">{getFileName(value)}</p></div></div>{signedUrls[key] ? <a href={signedUrls[key]} target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-blue-50 px-2.5 py-2 text-xs font-semibold text-blue-600 transition hover:bg-blue-100"><Download size={14} /> Apri</a> : <span className="shrink-0 text-[11px] text-slate-400">{loadingFiles ? 'Preparazione...' : 'Solo nome disponibile'}</span>}</div>)}</div>}{fileError && <p role="alert" className="mt-2 text-xs text-amber-700">Alcuni documenti non sono disponibili in questo momento.</p>}</section><div className="mt-7 flex justify-end border-t border-slate-100 pt-5"><button type="button" onClick={onClose} className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700">Chiudi</button></div></div></div>;
+  <div className="mt-6 grid gap-4 sm:grid-cols-2"><DetailItem label="Categoria" value={practice.category} /><DetailItem label="Servizio" value={practice.service} /><DetailItem label="Ufficio CAF" value={practice.office} /><DetailItem label="Operatore" value={practice.operator} /><div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3.5"><label className="block"><span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-blue-700">Stato pratica</span><select value={selectedStatus} disabled={savingStatus} onChange={(event) => void saveStatus(event.target.value as PracticeStatus)} className="mt-1.5 w-full rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none focus:border-blue-500 disabled:opacity-60"><option value="Nuova">Nuova</option><option value="In lavorazione">In lavorazione</option><option value="Completata">Completata</option><option value="Annullata">Annullata</option></select></label></div><DetailItem label="Priorità" value={practice.priority} /><DetailItem label="Scadenza" value={practice.deadline ? new Intl.DateTimeFormat('it-IT', { dateStyle: 'long' }).format(new Date(`${practice.deadline}T12:00:00`)) : 'Nessuna'} /><DetailItem label="Pagamento" value={`${practice.payment_status} · ${formatAmount(practice.amount_received)}`} /></div><section className="mt-6 rounded-xl border border-slate-200 bg-slate-50/70 p-4"><h3 className="text-sm font-bold text-slate-900">Descrizione</h3><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">{practice.description || 'Nessuna descrizione inserita.'}</p></section><section className="mt-6 rounded-xl border border-blue-100 bg-blue-50/50 p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h3 className="text-sm font-bold text-slate-900">Ricevuta cliente</h3><p className="mt-1 text-xs leading-5 text-slate-500">Genera un PDF riepilogativo con cliente, ufficio, servizio e pagamento.</p></div>{receiptUrl ? <a href={receiptUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-blue-700 ring-1 ring-inset ring-blue-200"><Download size={14} /> Scarica / visualizza</a> : <button type="button" disabled={generatingReceipt || clientLoading} onClick={() => void generateReceipt()} className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"><FileText size={14} /> {generatingReceipt ? 'Generazione...' : 'Genera ricevuta PDF'}</button>}</div>{receiptDocument && !receiptUrl && <p className="mt-3 text-xs text-slate-500">Ricevuta salvata, collegamento in preparazione...</p>}</section><section className="mt-6 rounded-xl border border-slate-200 bg-slate-50/70 p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><h3 className="text-sm font-bold text-slate-900">Documenti Back-Office</h3><p className="mt-1 text-xs leading-5 text-slate-500">Carica il file finale della pratica. PDF, JPG o PNG, massimo 15 MB.</p></div><label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#101a2e] px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800"><Upload size={14} /> {backOfficeFile ? 'Cambia file' : 'Scegli file'}<input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(event) => setBackOfficeFile(event.target.files?.[0] ?? null)} className="sr-only" /></label></div>{backOfficeFile && <div className="mt-3 flex flex-col gap-2 rounded-lg border border-blue-100 bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-between"><span className="truncate text-xs font-medium text-slate-700">{backOfficeFile.name}</span><button type="button" disabled={uploadingFile} onClick={() => void uploadBackOfficeFile()} className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"><Upload size={14} /> {uploadingFile ? 'Caricamento...' : 'Carica documento'}</button></div>}{backOfficeDocument && <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-emerald-100 bg-emerald-50/60 px-3 py-3"><div className="flex min-w-0 items-center gap-2"><FileCheck2 size={17} className="shrink-0 text-emerald-600" /><span className="truncate text-xs font-semibold text-slate-700">{backOfficeDocument.name}</span></div>{backOfficeUrl ? <a href={backOfficeUrl} target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-white px-2.5 py-2 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200"><Download size={14} /> Apri</a> : <span className="text-[11px] text-slate-400">Preparazione...</span>}</div>}{workflowMessage && <p role="status" className="mt-3 text-xs font-medium text-slate-600">{workflowMessage}</p>}</section><section className="mt-6"><div className="flex items-center justify-between gap-3"><div><h3 className="text-sm font-bold text-slate-900">Documenti caricati</h3><p className="mt-1 text-xs text-slate-500">I collegamenti sono protetti e scadono dopo pochi minuti.</p></div><FileText size={19} className="text-blue-600" /></div>{documents.length === 0 ? <div className="mt-3 rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-400">Nessun documento caricato.</div> : <div className="mt-3 space-y-2">{documents.map(([key, value]) => <div key={key} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-3"><div className="flex min-w-0 items-center gap-3"><FileText size={17} className="shrink-0 text-slate-400" /><div className="min-w-0"><p className="truncate text-xs font-semibold text-slate-800">{documentLabels[key] ?? key}</p><p className="truncate text-[11px] text-slate-500">{getFileName(value)}</p></div></div>{signedUrls[key] ? <a href={signedUrls[key]} target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-blue-50 px-2.5 py-2 text-xs font-semibold text-blue-600 transition hover:bg-blue-100"><Download size={14} /> Apri</a> : <span className="shrink-0 text-[11px] text-slate-400">{loadingFiles ? 'Preparazione...' : 'Solo nome disponibile'}</span>}</div>)}</div>}{fileError && <p role="alert" className="mt-2 text-xs text-amber-700">Alcuni documenti non sono disponibili in questo momento.</p>}</section><div className="mt-7 flex justify-end border-t border-slate-100 pt-5"><button type="button" onClick={onClose} className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700">Chiudi</button></div></div></div>;
 }
 
 function DetailItem({ label, value }: { label: string; value: string }) { return <div className="rounded-xl border border-slate-100 bg-white p-3.5"><p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">{label}</p><p className="mt-1.5 text-sm font-semibold text-slate-800">{value || '—'}</p></div>; }
