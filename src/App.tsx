@@ -245,10 +245,10 @@ function App() {
     return () => { active = false; listener.subscription.unsubscribe(); };
   }, []);
 
+  const activeSubtitle = activePage === 'Dashboard' ? 'Panoramica di sistema' : activePage === 'Nuova Pratica' ? 'Invia una nuova pratica al team back-office.' : activePage === 'Uffici CAF' ? 'Gestisci le sedi CAF che collaborano con il tuo ufficio.' : activePage === 'Clienti' ? 'Gestisci i clienti e tutte le loro informazioni.' : activePage === 'Utenti e Ruoli' ? 'Gestisci accessi, ruoli e assegnazioni del team.' : activePage === 'Servizi e Prezzi' ? 'Configura il catalogo dei servizi disponibili per le pratiche.' : activePage === 'Gestione Crediti' ? 'Ricarica, controlla e gestisci i crediti degli uffici esterni.' : activePage === 'Agenda' ? 'Organizza appuntamenti, scadenze e attività del team.' : 'Sezione in preparazione';
+
   if (authLoading) return <AuthLoading />;
   if (!session) return <PublicLanding />;
-
-  const activeSubtitle = useMemo(() => activePage === 'Dashboard' ? 'Panoramica di sistema' : activePage === 'Nuova Pratica' ? 'Invia una nuova pratica al team back-office.' : activePage === 'Uffici CAF' ? 'Gestisci le sedi CAF che collaborano con il tuo ufficio.' : activePage === 'Clienti' ? 'Gestisci i clienti e tutte le loro informazioni.' : activePage === 'Utenti e Ruoli' ? 'Gestisci accessi, ruoli e assegnazioni del team.' : activePage === 'Servizi e Prezzi' ? 'Configura il catalogo dei servizi disponibili per le pratiche.' : activePage === 'Gestione Crediti' ? 'Ricarica, controlla e gestisci i crediti degli uffici esterni.' : activePage === 'Agenda' ? 'Organizza appuntamenti, scadenze e attività del team.' : 'Sezione in preparazione', [activePage]);
   const selectPage = (page: string) => { setActivePage(page); setSidebarOpen(false); };
 
   return (
