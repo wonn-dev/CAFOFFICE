@@ -26,7 +26,6 @@ import {
   FileStack,
   FolderKanban,
   FolderOpen,
-  Gauge,
   LayoutDashboard,
   LockKeyhole,
   LogOut,
@@ -93,6 +92,7 @@ type Client = {
 type ClientForm = Omit<Client, 'id' | 'created_at'>;
 type StaffRole = 'Amministratore' | 'Operatore Ufficio CAF';
 type StaffContext = { role: StaffRole; staff_name: string; office: string; status: string };
+type ProfileStaff = { id: string; name: string; email: string; phone: string; office: string; role: string; status: string };
 type StaffMember = {
   id: string;
   name: string;
@@ -290,12 +290,12 @@ function App() {
           {navGroups.map((group) => <div key={group.label} className="mb-6"><p className={`mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 ${sidebarCompact ? 'lg:hidden' : ''}`}>{group.label}</p>{group.items.map(({ label, icon: Icon }) => <button key={label} onClick={() => selectPage(label)} title={sidebarCompact ? label : undefined} className={`group mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[13px] font-medium transition ${activePage === label ? 'bg-blue-600 text-white shadow-lg shadow-blue-950/20' : 'text-slate-300 hover:bg-white/[0.07] hover:text-white'} ${sidebarCompact ? 'lg:justify-center lg:px-0' : ''}`}><Icon size={17} strokeWidth={activePage === label ? 2.4 : 1.8} /><span className={sidebarCompact ? 'lg:hidden' : ''}>{label}</span>{activePage === label && !sidebarCompact && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-white" />}</button>)}</div>)}
           <div className="border-t border-white/10 pt-5"><button onClick={() => selectPage('Notifiche')} className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[13px] font-medium transition ${activePage === 'Notifiche' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-white/[0.07] hover:text-white'} ${sidebarCompact ? 'lg:justify-center lg:px-0' : ''}`}><Bell size={17} strokeWidth={1.8} /><span className={sidebarCompact ? 'lg:hidden' : ''}>Notifiche</span><span className={`ml-auto rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white ${sidebarCompact ? 'lg:hidden' : ''}`}>9</span></button><button onClick={() => selectPage('Profilo')} className={`mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[13px] font-medium transition ${activePage === 'Profilo' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-white/[0.07] hover:text-white'} ${sidebarCompact ? 'lg:justify-center lg:px-0' : ''}`}><UserRound size={17} strokeWidth={1.8} /><span className={sidebarCompact ? 'lg:hidden' : ''}>Profilo</span></button></div>
         </nav>
-        <div className={`border-t border-white/10 p-4 ${sidebarCompact ? 'lg:px-3' : ''}`}><button type="button" onClick={() => selectPage('Profilo')} aria-label="Apri profilo" className={`flex w-full items-center gap-3 text-left ${sidebarCompact ? 'lg:justify-center' : ''}`}><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-700 text-[11px] font-bold text-white ring-2 ring-slate-600">MS</div><div className={sidebarCompact ? 'lg:hidden' : ''}><p className="truncate text-xs font-semibold text-white">{staffContext?.staff_name || session.user.email}</p><p className="mt-0.5 text-[10px] text-slate-400">{staffContext?.role || 'Operatore Ufficio CAF'}</p></div></button><button onClick={() => void supabase.auth.signOut()} className={`mt-4 flex items-center gap-3 px-1 text-xs font-medium text-slate-400 transition hover:text-white ${sidebarCompact ? 'lg:mx-auto' : ''}`}><LogOut size={16} /><span className={sidebarCompact ? 'lg:hidden' : ''}>Esci</span></button></div>
+        <div className={`border-t border-white/10 p-4 ${sidebarCompact ? 'lg:px-3' : ''}`}><button type="button" onClick={() => selectPage('Profilo')} aria-label="Apri profilo" className={`flex w-full items-center gap-3 text-left ${sidebarCompact ? 'lg:justify-center' : ''}`}><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-700 text-[11px] font-bold text-white ring-2 ring-slate-600">{getInitials(staffContext?.staff_name || session.user.email || '')}</div><div className={sidebarCompact ? 'lg:hidden' : ''}><p className="truncate text-xs font-semibold text-white">{staffContext?.staff_name || session.user.email}</p><p className="mt-0.5 text-[10px] text-slate-400">{staffContext?.role || 'Operatore Ufficio CAF'}</p></div></button><button onClick={() => void supabase.auth.signOut()} className={`mt-4 flex items-center gap-3 px-1 text-xs font-medium text-slate-400 transition hover:text-white ${sidebarCompact ? 'lg:mx-auto' : ''}`}><LogOut size={16} /><span className={sidebarCompact ? 'lg:hidden' : ''}>Esci</span></button></div>
       </aside>
       {sidebarOpen && <button aria-label="Chiudi menu" onClick={() => setSidebarOpen(false)} className="fixed inset-0 z-30 bg-slate-950/40 lg:hidden" />}
       <div className={`transition-[padding] duration-300 ${sidebarCompact ? 'lg:pl-[84px]' : 'lg:pl-[264px]'}`}>
-        <header className="sticky top-0 z-20 flex h-[76px] items-center justify-between border-b border-slate-200 bg-white/95 px-5 backdrop-blur md:px-8"><div className="flex items-center gap-3"><button onClick={() => setSidebarOpen(true)} aria-label="Apri menu" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:hidden"><Menu size={20} /></button><div><p className="hidden text-[11px] font-medium text-slate-400 sm:block">{staffContext?.role || 'Operatore Ufficio CAF'}</p><p className="text-sm font-semibold text-slate-900">{activePage === 'Dashboard' ? 'Pannello di Controllo' : activePage}</p></div></div><div className="flex items-center gap-4 md:gap-6"><button aria-label="Cerca" className="hidden rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 sm:block"><Search size={18} /></button><button aria-label="Notifiche" className="relative rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"><Bell size={19} /><span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">9</span></button><div className="hidden h-8 w-px bg-slate-200 sm:block" /><button type="button" onClick={() => selectPage('Profilo')} aria-label="Apri profilo" className="flex items-center gap-2.5 rounded-xl p-1.5 text-left transition hover:bg-slate-100"><div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#101a2e] text-[11px] font-bold text-white">MS</div><div className="hidden lg:block"><p className="text-xs font-semibold text-slate-800">{staffContext?.staff_name || session.user.email}</p><p className="mt-0.5 text-[10px] text-slate-400">{session.user.email}</p></div><ChevronDown size={15} className="hidden text-slate-400 lg:block" /></button></div></header>
-        <main className="mx-auto max-w-[1440px] p-5 md:p-8"><div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><div className="mb-2 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-blue-600"><SlidersHorizontal size={13} /> Area amministrativa</div><h1 className="text-2xl font-bold tracking-tight text-slate-950 md:text-[28px]">{activePage}</h1><p className="mt-1 text-sm text-slate-500">{activeSubtitle}</p></div>{(activePage === 'Dashboard' || activePage === 'Le Mie Pratiche') && <button onClick={() => selectPage('Nuova Pratica')} className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-600/25"><FilePlus2 size={17} /> Nuova Pratica</button>}</div>{activePage === 'Dashboard' ? <Dashboard isAdmin={isAdmin} /> : activePage === 'Nuova Pratica' ? <NewPractice /> : activePage === 'Tutte le Pratiche' || activePage === 'Le Mie Pratiche' ? <AllPractices isAdmin={isAdmin} /> : activePage === 'Uffici CAF' ? <CafOffices /> : activePage === 'Clienti' ? <Clients /> : activePage === 'Utenti e Ruoli' ? <UsersRoles /> : activePage === 'Servizi e Prezzi' ? <ServicesCatalog /> : activePage === 'Gestione Crediti' ? <CreditManagement /> : activePage === 'Agenda' ? <Agenda /> : activePage === 'Profilo' ? <Profile /> : <PlaceholderPage page={activePage} />}</main>
+        <header className="sticky top-0 z-20 flex h-[76px] items-center justify-between border-b border-slate-200 bg-white/95 px-5 backdrop-blur md:px-8"><div className="flex items-center gap-3"><button onClick={() => setSidebarOpen(true)} aria-label="Apri menu" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:hidden"><Menu size={20} /></button><div><p className="hidden text-[11px] font-medium text-slate-400 sm:block">{staffContext?.role || 'Operatore Ufficio CAF'}</p><p className="text-sm font-semibold text-slate-900">{activePage === 'Dashboard' ? 'Pannello di Controllo' : activePage}</p></div></div><div className="flex items-center gap-4 md:gap-6"><button aria-label="Cerca" className="hidden rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 sm:block"><Search size={18} /></button><button aria-label="Notifiche" className="relative rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"><Bell size={19} /><span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">9</span></button><div className="hidden h-8 w-px bg-slate-200 sm:block" /><button type="button" onClick={() => selectPage('Profilo')} aria-label="Apri profilo" className="flex items-center gap-2.5 rounded-xl p-1.5 text-left transition hover:bg-slate-100"><div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#101a2e] text-[11px] font-bold text-white">{getInitials(staffContext?.staff_name || session.user.email || '')}</div><div className="hidden lg:block"><p className="text-xs font-semibold text-slate-800">{staffContext?.staff_name || session.user.email}</p><p className="mt-0.5 text-[10px] text-slate-400">{session.user.email}</p></div><ChevronDown size={15} className="hidden text-slate-400 lg:block" /></button></div></header>
+        <main className="mx-auto max-w-[1440px] p-5 md:p-8"><div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><div className="mb-2 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-blue-600"><SlidersHorizontal size={13} /> Area amministrativa</div><h1 className="text-2xl font-bold tracking-tight text-slate-950 md:text-[28px]">{activePage}</h1><p className="mt-1 text-sm text-slate-500">{activeSubtitle}</p></div>{(activePage === 'Dashboard' || activePage === 'Le Mie Pratiche') && <button onClick={() => selectPage('Nuova Pratica')} className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-600/25"><FilePlus2 size={17} /> Nuova Pratica</button>}</div>{activePage === 'Dashboard' ? <Dashboard isAdmin={isAdmin} /> : activePage === 'Nuova Pratica' ? <NewPractice /> : activePage === 'Tutte le Pratiche' || activePage === 'Le Mie Pratiche' ? <AllPractices isAdmin={isAdmin} /> : activePage === 'Uffici CAF' ? <CafOffices /> : activePage === 'Clienti' ? <Clients /> : activePage === 'Utenti e Ruoli' ? <UsersRoles /> : activePage === 'Servizi e Prezzi' ? <ServicesCatalog /> : activePage === 'Gestione Crediti' ? <CreditManagement /> : activePage === 'Agenda' ? <Agenda /> : activePage === 'Profilo' ? <Profile session={session} staffContext={staffContext} /> : <PlaceholderPage page={activePage} />}</main>
       </div>
     </div>
   );
@@ -707,7 +707,7 @@ function PracticeDetailsModal({ practice, onClose, onUpdated }: { practice: Stor
   const [receiptUrl, setReceiptUrl] = useState('');
   const [generatingReceipt, setGeneratingReceipt] = useState(false);
   const documentLabels: Record<string, string> = Object.fromEntries(documentTypes.map((item) => [item.key, item.label]));
-  const documents = Object.entries(practice.documents ?? {}).filter(([, value]) => value);
+  const documents = useMemo(() => Object.entries(practice.documents ?? {}).filter(([, value]) => value), [practice.documents]);
 
   useEffect(() => {
     let active = true;
@@ -761,7 +761,7 @@ function PracticeDetailsModal({ practice, onClose, onUpdated }: { practice: Stor
     };
     void loadSignedUrls();
     return () => { active = false; };
-  }, [practice.documents]);
+  }, [documents]);
 
   const formatDate = (value: string | null) => value ? new Intl.DateTimeFormat('it-IT', { dateStyle: 'long', timeStyle: 'short' }).format(new Date(value)) : '—';
   const formatAmount = (value: number) => `€${value.toFixed(2).replace('.', ',')}`;
@@ -1214,18 +1214,56 @@ function NewPractice() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block"><span className="mb-2 block text-xs font-semibold text-slate-700">{label}</span>{children}</label>; }
 function DocumentUpload({ id, label, icon: Icon, file, onChange }: { id: string; label: string; icon: LucideIcon; file: File | null; onChange: (event: ChangeEvent<HTMLInputElement>) => void }) { return <div className="overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:border-blue-300 hover:shadow-sm"><div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50/70 px-3.5 py-3"><Icon size={16} className="text-slate-500" /><span className="text-xs font-semibold text-slate-800">{label}</span></div><label htmlFor={id} className="m-3 flex min-h-[88px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-200 bg-slate-50/60 px-3 text-center transition hover:border-blue-300 hover:bg-blue-50/40"><Upload size={20} className="mb-2 text-slate-400" /><span className="text-xs font-medium text-slate-600">{file ? file.name : 'Carica File'}</span>{file && <span className="mt-1 max-w-full truncate text-[10px] text-emerald-600">Documento selezionato</span>}<input id={id} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={onChange} className="sr-only" /></label></div>; }
 function StatusBadge({ status }: { status: PracticeStatus }) { const styles: Record<PracticeStatus, string> = { Nuova: 'bg-blue-50 text-blue-600 ring-blue-100', 'In lavorazione': 'bg-amber-50 text-amber-700 ring-amber-100', Completata: 'bg-emerald-50 text-emerald-600 ring-emerald-100', Annullata: 'bg-slate-100 text-slate-500 ring-slate-200' }; return <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[10px] font-semibold ring-1 ring-inset ${styles[status]}`}><span className="h-1.5 w-1.5 rounded-full bg-current" />{status}</span>; }
-function Profile() {
-  const [name, setName] = useState('Md Shawon Ahmed');
-  const [phone, setPhone] = useState('349 7654321');
-  const [saved, setSaved] = useState(false);
+function getInitials(value: string) {
+  const initials = value.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase() ?? '').join('');
+  return initials || 'U';
+}
 
-  const saveProfile = (event: FormEvent<HTMLFormElement>) => {
+function Profile({ session, staffContext }: { session: Session; staffContext: StaffContext | null }) {
+  const [profile, setProfile] = useState<ProfileStaff | null>(null);
+  const [name, setName] = useState(staffContext?.staff_name || '');
+  const [phone, setPhone] = useState('');
+  const [saved, setSaved] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    const loadProfile = async () => {
+      const { data, error } = await supabase.from('staff_members').select('id, name, email, phone, office, role, status').eq('email', session.user.email ?? '').maybeSingle();
+      if (!active) return;
+      if (error || !data) {
+        setErrorMessage('Non è stato possibile caricare il profilo.');
+        return;
+      }
+      const nextProfile = data as ProfileStaff;
+      setProfile(nextProfile);
+      setName(nextProfile.name);
+      setPhone(nextProfile.phone);
+    };
+    void loadProfile();
+    return () => { active = false; };
+  }, [session.user.email]);
+
+  const saveProfile = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!profile) return;
+    setErrorMessage('');
+    const { error } = await supabase.from('staff_members').update({ name, phone }).eq('id', profile.id);
+    if (error) {
+      setErrorMessage('Non è stato possibile salvare il profilo.');
+      return;
+    }
+    setProfile((current) => current ? { ...current, name, phone } : current);
     setSaved(true);
     window.setTimeout(() => setSaved(false), 2200);
   };
 
-  return <section className="mx-auto max-w-[720px]"><div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7"><div className="mb-7 flex items-center gap-4 border-b border-slate-100 pb-6"><div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#101a2e] text-xl font-bold text-white">MS</div><div className="min-w-0"><h2 className="text-lg font-bold text-slate-950">{name}</h2><p className="mt-1 text-sm text-slate-500">shawon.soluzionecentro@gmail.com</p><span className="mt-2 inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">Amministratore</span></div></div><form onSubmit={saveProfile} className="space-y-5"><Field label="Nome completo"><input required value={name} onChange={(event) => setName(event.target.value)} className="input" /></Field><Field label="Email"><input value="shawon.soluzionecentro@gmail.com" disabled className="input bg-slate-50 text-slate-400" /></Field><Field label="Telefono"><input value={phone} onChange={(event) => setPhone(event.target.value)} className="input" /></Field><Field label="Ufficio CAF"><input value="CAF Roma Eur" disabled className="input bg-slate-50 text-slate-400" /></Field><Field label="Indirizzo ufficio"><input value="Viale Europa 45, Roma" disabled className="input bg-slate-50 text-slate-400" /></Field><div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-5"><span className={`text-xs font-medium text-emerald-600 transition-opacity ${saved ? 'opacity-100' : 'opacity-0'}`}>Profilo salvato</span><button type="submit" className="inline-flex items-center gap-2 rounded-xl bg-[#101a2e] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"><Save size={16} /> Salva</button></div></form></div></section>;
+  const displayName = profile?.name || staffContext?.staff_name || session.user.email || 'Profilo';
+  const displayEmail = profile?.email || session.user.email || '';
+  const displayOffice = profile?.office || staffContext?.office || 'Non assegnato';
+  const displayRole = profile?.role || staffContext?.role || 'Operatore Ufficio CAF';
+
+  return <section className="mx-auto max-w-[720px]"><div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7"><div className="mb-7 flex items-center gap-4 border-b border-slate-100 pb-6"><div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#101a2e] text-xl font-bold text-white">{getInitials(displayName)}</div><div className="min-w-0"><h2 className="text-lg font-bold text-slate-950">{displayName}</h2><p className="mt-1 text-sm text-slate-500">{displayEmail}</p><span className="mt-2 inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">{displayRole}</span></div></div>{errorMessage && <p role="alert" className="mb-5 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700">{errorMessage}</p>}<form onSubmit={saveProfile} className="space-y-5"><Field label="Nome completo"><input required value={name} onChange={(event) => setName(event.target.value)} className="input" /></Field><Field label="Email"><input value={displayEmail} disabled className="input bg-slate-50 text-slate-400" /></Field><Field label="Telefono"><input value={phone} onChange={(event) => setPhone(event.target.value)} className="input" /></Field><Field label="Ufficio CAF"><input value={displayOffice} disabled className="input bg-slate-50 text-slate-400" /></Field><div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-5"><span className={`text-xs font-medium text-emerald-600 transition-opacity ${saved ? 'opacity-100' : 'opacity-0'}`}>Profilo salvato</span><button disabled={!profile} type="submit" className="inline-flex items-center gap-2 rounded-xl bg-[#101a2e] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"><Save size={16} /> Salva</button></div></form></div></section>;
 }
 
 function PlaceholderPage({ page }: { page: string }) { return <div className="flex min-h-[420px] items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white"><div className="max-w-sm px-6 text-center"><div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600"><Settings size={24} /></div><h2 className="text-lg font-semibold text-slate-900">{page}</h2><p className="mt-2 text-sm leading-6 text-slate-500">Questa sezione sarà disponibile nella prossima versione di CAFStream.</p></div></div>; }
