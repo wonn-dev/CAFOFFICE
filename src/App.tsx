@@ -1229,12 +1229,13 @@ function Profile({ session, staffContext }: { session: Session; staffContext: St
   useEffect(() => {
     let active = true;
     const loadProfile = async () => {
-      const { data, error } = await supabase.from('staff_members').select('id, name, email, phone, office, role, status').eq('email', session.user.email ?? '').maybeSingle();
+      const { data, error } = await supabase.from('staff_members').select('id, name, email, phone, office, role, status').eq('owner_id', session.user.id).maybeSingle();
       if (!active) return;
-      if (error || !data) {
+      if (error) {
         setErrorMessage('Non è stato possibile caricare il profilo.');
         return;
       }
+      if (!data) return;
       const nextProfile = data as ProfileStaff;
       setProfile(nextProfile);
       setName(nextProfile.name);
@@ -1242,7 +1243,7 @@ function Profile({ session, staffContext }: { session: Session; staffContext: St
     };
     void loadProfile();
     return () => { active = false; };
-  }, [session.user.email]);
+  }, [session.user.id]);
 
   const saveProfile = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
