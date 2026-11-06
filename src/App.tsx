@@ -1055,9 +1055,17 @@ function CreditManagement({ staffContext }: { staffContext: StaffContext | null 
   };
 
   const updateRequest = async (request: CreditRequest, status: CreditRequest['status']) => {
-    const { error } = await supabase.from('credit_requests').update({ status, responded_at: new Date().toISOString() }).eq('id', request.id);
+    const { error } = await supabase.rpc('admin_respond_credit_request', { p_request: request.id, p_status: status });
     if (error) { setErrorMessage('Non è stato possibile aggiornare la richiesta.'); return; }
     setRequests((current) => current.map((item) => item.id === request.id ? { ...item, status } : item));
+    if (status === 'Approvata') {
+      setAccounts((current) => current.map((account) => account.office_id === request.office_id ? {
+        ...account,
+        available_credits: account.available_credits + request.requested_credits,
+        credits_received: account.credits_received + request.requested_credits,
+        last_recharge_at: new Date().toISOString(),
+      } : account));
+    }
   };
 
   if (!isAdmin) return <StaffCreditView officeId={staffContext?.office_id ?? null} offices={offices} accounts={accounts} requests={requests} transactions={transactions} loading={loading} errorMessage={errorMessage} />;
