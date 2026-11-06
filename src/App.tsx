@@ -92,7 +92,7 @@ type Client = {
 };
 type ClientForm = Omit<Client, 'id' | 'created_at'>;
 type StaffRole = 'Amministratore' | 'Operatore Ufficio CAF';
-type StaffContext = { role: StaffRole; staff_name: string; office: string; office_id: string | null; status: string };
+type StaffContext = { role: StaffRole; staff_name: string; office: string; office_id: string | null; status: string; can_pay_later: boolean };
 type ProfileStaff = { id: string; name: string; email: string; phone: string; office: string; role: string; status: string };
 type StaffMember = {
   id: string;
@@ -264,15 +264,16 @@ function App() {
     let active = true;
     setRoleLoading(true);
     const loadStaffContext = async () => {
-      const { data, error } = await supabase.rpc('get_current_staff_context');
+      const { data, error } = await supabase.rpc('get_current_staff_context_with_permission');
       if (!active) return;
       const context = Array.isArray(data) ? data[0] : data;
-      setStaffContext(error || !context ? { role: 'Operatore Ufficio CAF', staff_name: '', office: '', office_id: null, status: '' } : {
+      setStaffContext(error || !context ? { role: 'Operatore Ufficio CAF', staff_name: '', office: '', office_id: null, status: '', can_pay_later: false } : {
         role: context.role === 'Amministratore' ? 'Amministratore' : 'Operatore Ufficio CAF',
         staff_name: context.staff_name ?? '',
         office: context.office ?? '',
         office_id: context.office_id ?? null,
         status: context.status ?? '',
+        can_pay_later: Boolean(context.can_pay_later),
       });
       setRoleLoading(false);
     };
@@ -1203,7 +1204,7 @@ function NewPractice({ staffContext }: { staffContext: StaffContext | null }) {
   const [newClientError, setNewClientError] = useState('');
   const [newClientForm, setNewClientForm] = useState<ClientForm>({ first_name: '', last_name: '', tax_code: '', email: '', phone: '', notes: '', address: '', street_number: '', postal_code: '', city: '', province: '', province_code: '', region: '', country: 'Italia', office: '' });
   const [officeBalance, setOfficeBalance] = useState<number | null>(null);
-  const [canPayLater, setCanPayLater] = useState(false);
+  const canPayLater = staffContext?.can_pay_later ?? false;
   const [balanceLoading, setBalanceLoading] = useState(true);
   const selectedService = availableServices.find((item) => item.name === service);
   const creditCost = selectedService?.credit_cost ?? 0;
@@ -1211,18 +1212,16 @@ function NewPractice({ staffContext }: { staffContext: StaffContext | null }) {
 
   useEffect(() => {
     const loadServices = async () => {
-      const [categoryResult, serviceResult, clientResult, balanceResult, officeResult] = await Promise.all([
+      const [categoryResult, serviceResult, clientResult, balanceResult] = await Promise.all([
         supabase.from('service_categories').select('id, name, slug, description, icon, sort_order').order('sort_order'),
         supabase.from('service_catalog').select('id, category_id, name, description, credit_cost, euro_cost, status, instructions, required_documents, sort_order').eq('status', 'Attivo').order('sort_order'),
         supabase.from('clients').select('id, first_name, last_name, tax_code, email, phone, notes, address, street_number, postal_code, city, province, province_code, region, country, office, created_at').order('created_at', { ascending: false }),
         supabase.from('office_credit_accounts').select('available_credits').maybeSingle(),
-        staffContext?.office_id ? supabase.from('caf_offices').select('can_pay_later').eq('id', staffContext.office_id).maybeSingle() : Promise.resolve({ data: null, error: null }),
       ]);
       setServiceCategories((categoryResult.data as ServiceCategory[]) ?? []);
       setAvailableServices((serviceResult.data as ServiceItem[]) ?? []);
       setClients((clientResult.data as Client[]) ?? []);
       setOfficeBalance(balanceResult.data ? (balanceResult.data as { available_credits: number }).available_credits : null);
-      setCanPayLater(Boolean((officeResult.data as { can_pay_later?: boolean } | null)?.can_pay_later));
       setBalanceLoading(false);
     };
     void loadServices();
