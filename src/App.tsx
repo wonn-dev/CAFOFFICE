@@ -106,6 +106,7 @@ type StaffMember = {
   practice_count: number;
   created_at: string;
 };
+type StaffOfficeAssignment = { staff_id: string; office_id: string; office_name: string };
 type StaffForm = Omit<StaffMember, 'id' | 'created_at'>;
 type ServiceCategory = {
   id: string;
@@ -462,16 +463,22 @@ function UsersRoles() {
   const [saving, setSaving] = useState(false);
   const [memberForm, setMemberForm] = useState<StaffForm>({ name: '', email: '', phone: '', role: 'Operatore Ufficio CAF', office: 'Nessun ufficio', payment_permission: 'Solo Crediti', status: 'Attivo', practice_count: 0 });
   const roles = ['Amministratore', 'Operatore Back-Office', 'Admin Ufficio CAF', 'Operatore Ufficio CAF', 'In Attesa di Approvazione'];
-  const officeOptions = ['Nessun ufficio', ...Array.from(new Set([...cafOffices.map((office) => office.name), ...members.map((member) => member.office).filter(Boolean)]))];
+  const officeOptions = ['Nessun ufficio', ...cafOffices.filter((office) => office.is_active).map((office) => office.name)];
 
   useEffect(() => {
     const loadMembers = async () => {
-      const [memberResult, officeResult] = await Promise.all([
+      const [memberResult, officeResult, assignmentResult] = await Promise.all([
         supabase.from('staff_members').select('id, name, email, phone, role, office, payment_permission, status, practice_count, created_at').order('created_at', { ascending: false }),
         supabase.from('caf_offices').select('id, name, address, vat_number, email, phone, is_active, can_pay_later, created_at').order('name'),
+        supabase.rpc('admin_list_staff_office_assignments'),
       ]);
-      if (memberResult.error || officeResult.error) setErrorMessage('Non è stato possibile caricare utenti e uffici.');
-      setMembers((memberResult.data as StaffMember[]) ?? []);
+      if (memberResult.error || officeResult.error || assignmentResult.error) setErrorMessage('Non è stato possibile caricare utenti e uffici.');
+      const assignments = (assignmentResult.data as StaffOfficeAssignment[] | null) ?? [];
+      const assignmentByStaffId = new Map(assignments.map((assignment) => [assignment.staff_id, assignment.office_name]));
+      setMembers(((memberResult.data as StaffMember[]) ?? []).map((member) => ({
+        ...member,
+        office: assignmentByStaffId.get(member.id) ?? member.office,
+      })));
       setCafOffices((officeResult.data as CafOffice[]) ?? []);
       setLoading(false);
     };
