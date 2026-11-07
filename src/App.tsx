@@ -331,7 +331,10 @@ function LandingFeature({ icon: Icon, title, text }: { icon: LucideIcon; title: 
 }
 
 function AuthForm({ mode, onModeChange }: { mode: AuthMode; onModeChange: (mode: AuthMode) => void }) {
-  const [officeName, setOfficeName] = useState('');
+  const [officeId, setOfficeId] = useState('');
+  const [registrationOffices, setRegistrationOffices] = useState<Array<Pick<CafOffice, 'id' | 'name'>>>([]);
+  const [officeLoading, setOfficeLoading] = useState(false);
+  const [officeError, setOfficeError] = useState('');
   const [lastName, setLastName] = useState('');
   const [firstName, setFirstName] = useState('');
   const [address, setAddress] = useState('');
@@ -340,6 +343,26 @@ function AuthForm({ mode, onModeChange }: { mode: AuthMode; onModeChange: (mode:
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    if (mode !== 'signup') return;
+    let active = true;
+    setOfficeLoading(true);
+    setOfficeError('');
+    const loadRegistrationOffices = async () => {
+      const { data, error } = await supabase.rpc('list_registration_offices');
+      if (!active) return;
+      if (error) {
+        setRegistrationOffices([]);
+        setOfficeError('Non è stato possibile caricare gli uffici disponibili.');
+      } else {
+        setRegistrationOffices((data as Array<Pick<CafOffice, 'id' | 'name'>>) ?? []);
+      }
+      setOfficeLoading(false);
+    };
+    void loadRegistrationOffices();
+    return () => { active = false; };
+  }, [mode]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -351,14 +374,19 @@ function AuthForm({ mode, onModeChange }: { mode: AuthMode; onModeChange: (mode:
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) setMessage('Email o password non validi.');
       } else {
+        if (!officeId) {
+          setMessage('Seleziona l’ufficio presso cui vuoi registrarti.');
+          setBusy(false);
+          return;
+        }
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) {
           setMessage('Non è stato possibile creare l’account con questi dati.');
         } else if (!data.session) {
           setMessage('Controlla la tua email per completare la registrazione.');
         } else {
-          const { error: workspaceError } = await supabase.rpc('create_account_workspace', {
-            p_office_name: officeName,
+          const { error: workspaceError } = await supabase.rpc('create_account_workspace_for_office', {
+            p_office_id: officeId,
             p_first_name: firstName,
             p_last_name: lastName,
             p_address: address,
@@ -378,7 +406,7 @@ function AuthForm({ mode, onModeChange }: { mode: AuthMode; onModeChange: (mode:
     }
   };
 
-  return <div role="dialog" aria-modal="true" aria-labelledby="auth-title" className="w-full max-w-[440px] overflow-hidden rounded-3xl bg-white shadow-2xl"><div className="bg-[#10233b] p-6 text-white sm:p-8"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-xs font-bold">CP</span><span><span className="block text-sm font-bold">CAF &amp; Patronato</span><span className="block text-[10px] uppercase tracking-[0.14em] text-slate-300">Accesso area riservata</span></span></div><h2 id="auth-title" className="mt-8 text-2xl font-bold tracking-tight">{mode === 'login' ? 'Bentornato.' : 'Crea il tuo account.'}</h2><p className="mt-2 text-sm leading-6 text-slate-300">{mode === 'login' ? 'Accedi per entrare nella gestione delle tue pratiche.' : 'Imposta le tue credenziali per accedere alla piattaforma.'}</p></div><form onSubmit={submit} className="space-y-4 p-6 sm:p-8">{mode === 'signup' && <><label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Nome ufficio</span><input required value={officeName} onChange={(event) => setOfficeName(event.target.value)} className="input" placeholder="Es. CAF Roma Eur" /></label><div className="grid gap-3 sm:grid-cols-2"><label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Cognome</span><input required value={lastName} onChange={(event) => setLastName(event.target.value)} className="input" placeholder="Cognome" autoComplete="family-name" /></label><label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Nome</span><input required value={firstName} onChange={(event) => setFirstName(event.target.value)} className="input" placeholder="Nome" autoComplete="given-name" /></label></div><label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Indirizzo</span><input required value={address} onChange={(event) => setAddress(event.target.value)} className="input" placeholder="Via, numero civico, città" autoComplete="street-address" /></label><label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Numero di telefono</span><input required type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} className="input" placeholder="+39 000 000 0000" autoComplete="tel" /></label></>}<label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Email</span><span className="relative block"><Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} className="input pl-10" placeholder="nome@ufficio.it" autoComplete="email" /></span></label><label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Password</span><span className="relative block"><LockKeyhole size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input required minLength={6} type="password" value={password} onChange={(event) => setPassword(event.target.value)} className="input pl-10" placeholder="Almeno 6 caratteri" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} /></span></label>{message && <p role="alert" className="rounded-xl bg-amber-50 px-3.5 py-3 text-xs leading-5 text-amber-800">{message}</p>}<button disabled={busy} type="submit" className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60">{busy ? 'Attendi...' : mode === 'login' ? 'Accedi' : 'Crea account'} <ArrowRight size={16} /></button><p className="text-center text-xs text-slate-500">{mode === 'login' ? 'Non hai ancora un account?' : 'Hai già un account?'} <button type="button" onClick={() => onModeChange(mode === 'login' ? 'signup' : 'login')} className="font-bold text-blue-600 hover:text-blue-800">{mode === 'login' ? 'Registrati' : 'Accedi'}</button></p></form></div>;
+  return <div role="dialog" aria-modal="true" aria-labelledby="auth-title" className="w-full max-w-[440px] overflow-hidden rounded-3xl bg-white shadow-2xl"><div className="bg-[#10233b] p-6 text-white sm:p-8"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-xs font-bold">CP</span><span><span className="block text-sm font-bold">CAF &amp; Patronato</span><span className="block text-[10px] uppercase tracking-[0.14em] text-slate-300">Accesso area riservata</span></span></div><h2 id="auth-title" className="mt-8 text-2xl font-bold tracking-tight">{mode === 'login' ? 'Bentornato.' : 'Crea il tuo account.'}</h2><p className="mt-2 text-sm leading-6 text-slate-300">{mode === 'login' ? 'Accedi per entrare nella gestione delle tue pratiche.' : 'Imposta le tue credenziali per accedere alla piattaforma.'}</p></div><form onSubmit={submit} className="space-y-4 p-6 sm:p-8">{mode === 'signup' && <><label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Ufficio CAF</span><select required value={officeId} onChange={(event) => setOfficeId(event.target.value)} disabled={officeLoading || registrationOffices.length === 0} className="input disabled:bg-slate-50"><option value="">{officeLoading ? 'Caricamento uffici...' : registrationOffices.length === 0 ? 'Nessun ufficio disponibile' : 'Seleziona un ufficio...'}</option>{registrationOffices.map((office) => <option key={office.id} value={office.id}>{office.name}</option>)}</select></label>{officeError && <p role="alert" className="rounded-xl bg-red-50 px-3.5 py-3 text-xs leading-5 text-red-700">{officeError}</p>}<div className="grid gap-3 sm:grid-cols-2"><label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Cognome</span><input required value={lastName} onChange={(event) => setLastName(event.target.value)} className="input" placeholder="Cognome" autoComplete="family-name" /></label><label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Nome</span><input required value={firstName} onChange={(event) => setFirstName(event.target.value)} className="input" placeholder="Nome" autoComplete="given-name" /></label></div><label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Indirizzo</span><input required value={address} onChange={(event) => setAddress(event.target.value)} className="input" placeholder="Via, numero civico, città" autoComplete="street-address" /></label><label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Numero di telefono</span><input required type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} className="input" placeholder="+39 000 000 0000" autoComplete="tel" /></label></>}<label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Email</span><span className="relative block"><Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} className="input pl-10" placeholder="nome@ufficio.it" autoComplete="email" /></span></label><label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Password</span><span className="relative block"><LockKeyhole size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input required minLength={6} type="password" value={password} onChange={(event) => setPassword(event.target.value)} className="input pl-10" placeholder="Almeno 6 caratteri" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} /></span></label>{message && <p role="alert" className="rounded-xl bg-amber-50 px-3.5 py-3 text-xs leading-5 text-amber-800">{message}</p>}<button disabled={busy} type="submit" className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60">{busy ? 'Attendi...' : mode === 'login' ? 'Accedi' : 'Crea account'} <ArrowRight size={16} /></button><p className="text-center text-xs text-slate-500">{mode === 'login' ? 'Non hai ancora un account?' : 'Hai già un account?'} <button type="button" onClick={() => onModeChange(mode === 'login' ? 'signup' : 'login')} className="font-bold text-blue-600 hover:text-blue-800">{mode === 'login' ? 'Registrati' : 'Accedi'}</button></p></form></div>;
 }
 
 function UsersRoles() {
