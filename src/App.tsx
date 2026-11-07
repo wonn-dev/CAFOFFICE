@@ -235,6 +235,7 @@ function App() {
   const [sidebarCompact, setSidebarCompact] = useState(false);
   const [staffContext, setStaffContext] = useState<StaffContext | null>(null);
   const [roleLoading, setRoleLoading] = useState(false);
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -246,11 +247,16 @@ function App() {
       }
     };
     void loadSession();
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      if (active) {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (!active) return;
+      if (event === 'PASSWORD_RECOVERY') {
         setSession(nextSession);
+        setPasswordRecovery(true);
         setAuthLoading(false);
+        return;
       }
+      setSession(nextSession);
+      setAuthLoading(false);
     });
     return () => { active = false; listener.subscription.unsubscribe(); };
   }, []);
@@ -283,7 +289,8 @@ function App() {
 
   const activeSubtitle = activePage === 'Dashboard' ? (staffContext?.role === 'Amministratore' ? 'Panoramica di sistema' : 'Panoramica del tuo ufficio') : activePage === 'Nuova Pratica' ? 'Invia una nuova pratica al team back-office.' : activePage === 'Le Mie Pratiche' ? 'Visualizza solo le pratiche create da te.' : activePage === 'Uffici CAF' ? 'Gestisci le sedi CAF che collaborano con il tuo ufficio.' : activePage === 'Clienti' ? 'Gestisci i clienti del tuo spazio personale.' : activePage === 'Utenti e Ruoli' ? 'Gestisci accessi, ruoli e assegnazioni del team.' : activePage === 'Servizi e Prezzi' ? 'Configura il catalogo dei servizi disponibili per le pratiche.' : activePage === 'Gestione Crediti' ? 'Ricarica, controlla e gestisci i crediti degli uffici esterni.' : activePage === 'Crediti e Pagamenti' ? 'Controlla il saldo del tuo ufficio e lo storico dei crediti utilizzati.' : activePage === 'Agenda' ? 'Organizza appuntamenti, scadenze e attività del team.' : 'Sezione in preparazione';
 
-  if (authLoading || (session && roleLoading)) return <AuthLoading />;
+  if (authLoading || (session && !passwordRecovery && roleLoading)) return <AuthLoading />;
+  if (passwordRecovery && session) return <ResetPasswordScreen onDone={() => setPasswordRecovery(false)} />;
   if (!session) return <PublicLanding />;
   const isAdmin = staffContext?.role === 'Amministratore';
   const navGroups = isAdmin ? adminNavGroups : staffNavGroups;
@@ -317,7 +324,7 @@ function AuthLoading() {
   return <div className="flex min-h-screen items-center justify-center bg-[#f4f8fb]"><div className="flex items-center gap-3 text-sm font-semibold text-slate-600"><span className="h-8 w-8 animate-pulse rounded-xl bg-blue-600" /> Caricamento area riservata...</div></div>;
 }
 
-type AuthMode = 'login' | 'signup';
+type AuthMode = 'login' | 'signup' | 'recovery';
 
 function PublicLanding() {
   const [authMode, setAuthMode] = useState<AuthMode>('login');
@@ -328,6 +335,29 @@ function PublicLanding() {
 
 function LandingFeature({ icon: Icon, title, text }: { icon: LucideIcon; title: string; text: string }) {
   return <article className="rounded-2xl border border-white/80 bg-white/85 p-5 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-lg"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600"><Icon size={19} /></span><h3 className="mt-5 text-sm font-bold text-[#10233b]">{title}</h3><p className="mt-2 text-sm leading-6 text-slate-500">{text}</p></article>;
+}
+
+function ResetPasswordScreen({ onDone }: { onDone: () => void }) {
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
+  const [success, setSuccess] = useState(false);
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setMessage('');
+    if (password.length < 6) { setMessage('La password deve contenere almeno 6 caratteri.'); return; }
+    if (password !== confirm) { setMessage('Le password non coincidono.'); return; }
+    setBusy(true);
+    const { error } = await supabase.auth.updateUser({ password });
+    setBusy(false);
+    if (error) { setMessage('Non è stato possibile aggiornare la password. Riprova.'); return; }
+    setSuccess(true);
+    await supabase.auth.signOut();
+  };
+
+  return <div className="flex min-h-screen items-center justify-center bg-[#f4f8fb] px-4"><div className="w-full max-w-[440px] overflow-hidden rounded-3xl bg-white shadow-2xl"><div className="bg-[#10233b] p-6 text-white sm:p-8"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-xs font-bold">CP</span><span><span className="block text-sm font-bold">CAF &amp; Patronato</span><span className="block text-[10px] uppercase tracking-[0.14em] text-slate-300">Accesso area riservata</span></span></div><h2 className="mt-8 text-2xl font-bold tracking-tight">Nuova password.</h2><p className="mt-2 text-sm leading-6 text-slate-300">{success ? 'La tua password è stata aggiornata. Ora puoi accedere con la nuova password.' : 'Imposta una nuova password per il tuo account.'}</p></div><div className="space-y-4 p-6 sm:p-8">{success ? <button type="button" onClick={onDone} className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">Vai al login <ArrowRight size={16} /></button> : <form onSubmit={submit} className="space-y-4"><label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Nuova password</span><span className="relative block"><LockKeyhole size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input required minLength={6} type="password" value={password} onChange={(event) => setPassword(event.target.value)} className="input pl-10" placeholder="Almeno 6 caratteri" autoComplete="new-password" /></span></label><label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Conferma password</span><span className="relative block"><LockKeyhole size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input required minLength={6} type="password" value={confirm} onChange={(event) => setConfirm(event.target.value)} className="input pl-10" placeholder="Ripeti la password" autoComplete="new-password" /></span></label>{message && <p role="alert" className="rounded-xl bg-amber-50 px-3.5 py-3 text-xs leading-5 text-amber-800">{message}</p>}<button disabled={busy} type="submit" className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60">{busy ? 'Salvataggio...' : 'Salva nuova password'} <ArrowRight size={16} /></button></form>}</div></div></div>;
 }
 
 function AuthForm({ mode, onModeChange }: { mode: AuthMode; onModeChange: (mode: AuthMode) => void }) {
@@ -370,6 +400,17 @@ function AuthForm({ mode, onModeChange }: { mode: AuthMode; onModeChange: (mode:
     setMessage('');
 
     try {
+      if (mode === 'recovery') {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/?recovery=1`,
+        });
+        if (error) {
+          setMessage('Non è stato possibile inviare l’email di recupero. Riprova.');
+        } else {
+          setMessage('Ti abbiamo inviato un’email con il link per reimpostare la password. Controlla la tua casella di posta.');
+        }
+        return;
+      }
       if (mode === 'login') {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) setMessage('Email o password non validi.');
@@ -406,7 +447,7 @@ function AuthForm({ mode, onModeChange }: { mode: AuthMode; onModeChange: (mode:
     }
   };
 
-  return <div role="dialog" aria-modal="true" aria-labelledby="auth-title" className="w-full max-w-[440px] overflow-hidden rounded-3xl bg-white shadow-2xl"><div className="bg-[#10233b] p-6 text-white sm:p-8"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-xs font-bold">CP</span><span><span className="block text-sm font-bold">CAF &amp; Patronato</span><span className="block text-[10px] uppercase tracking-[0.14em] text-slate-300">Accesso area riservata</span></span></div><h2 id="auth-title" className="mt-8 text-2xl font-bold tracking-tight">{mode === 'login' ? 'Bentornato.' : 'Crea il tuo account.'}</h2><p className="mt-2 text-sm leading-6 text-slate-300">{mode === 'login' ? 'Accedi per entrare nella gestione delle tue pratiche.' : 'Imposta le tue credenziali per accedere alla piattaforma.'}</p></div><form onSubmit={submit} className="space-y-4 p-6 sm:p-8">{mode === 'signup' && <><label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Ufficio CAF</span><select required value={officeId} onChange={(event) => setOfficeId(event.target.value)} disabled={officeLoading || registrationOffices.length === 0} className="input disabled:bg-slate-50"><option value="">{officeLoading ? 'Caricamento uffici...' : registrationOffices.length === 0 ? 'Nessun ufficio disponibile' : 'Seleziona un ufficio...'}</option>{registrationOffices.map((office) => <option key={office.id} value={office.id}>{office.name}</option>)}</select></label>{officeError && <p role="alert" className="rounded-xl bg-red-50 px-3.5 py-3 text-xs leading-5 text-red-700">{officeError}</p>}<div className="grid gap-3 sm:grid-cols-2"><label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Cognome</span><input required value={lastName} onChange={(event) => setLastName(event.target.value)} className="input" placeholder="Cognome" autoComplete="family-name" /></label><label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Nome</span><input required value={firstName} onChange={(event) => setFirstName(event.target.value)} className="input" placeholder="Nome" autoComplete="given-name" /></label></div><label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Indirizzo</span><input required value={address} onChange={(event) => setAddress(event.target.value)} className="input" placeholder="Via, numero civico, città" autoComplete="street-address" /></label><label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Numero di telefono</span><input required type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} className="input" placeholder="+39 000 000 0000" autoComplete="tel" /></label></>}<label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Email</span><span className="relative block"><Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} className="input pl-10" placeholder="nome@ufficio.it" autoComplete="email" /></span></label><label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Password</span><span className="relative block"><LockKeyhole size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input required minLength={6} type="password" value={password} onChange={(event) => setPassword(event.target.value)} className="input pl-10" placeholder="Almeno 6 caratteri" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} /></span></label>{message && <p role="alert" className="rounded-xl bg-amber-50 px-3.5 py-3 text-xs leading-5 text-amber-800">{message}</p>}<button disabled={busy} type="submit" className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60">{busy ? 'Attendi...' : mode === 'login' ? 'Accedi' : 'Crea account'} <ArrowRight size={16} /></button><p className="text-center text-xs text-slate-500">{mode === 'login' ? 'Non hai ancora un account?' : 'Hai già un account?'} <button type="button" onClick={() => onModeChange(mode === 'login' ? 'signup' : 'login')} className="font-bold text-blue-600 hover:text-blue-800">{mode === 'login' ? 'Registrati' : 'Accedi'}</button></p></form></div>;
+  return <div role="dialog" aria-modal="true" aria-labelledby="auth-title" className="w-full max-w-[440px] overflow-hidden rounded-3xl bg-white shadow-2xl"><div className="bg-[#10233b] p-6 text-white sm:p-8"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-xs font-bold">CP</span><span><span className="block text-sm font-bold">CAF &amp; Patronato</span><span className="block text-[10px] uppercase tracking-[0.14em] text-slate-300">Accesso area riservata</span></span></div><h2 id="auth-title" className="mt-8 text-2xl font-bold tracking-tight">{mode === 'login' ? 'Bentornato.' : mode === 'recovery' ? 'Recupera password.' : 'Crea il tuo account.'}</h2><p className="mt-2 text-sm leading-6 text-slate-300">{mode === 'login' ? 'Accedi per entrare nella gestione delle tue pratiche.' : mode === 'recovery' ? 'Inserisci la tua email: ti invieremo un link per reimpostare la password.' : 'Imposta le tue credenziali per accedere alla piattaforma.'}</p></div><form onSubmit={submit} className="space-y-4 p-6 sm:p-8">{mode === 'signup' && <><label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Ufficio CAF</span><select required value={officeId} onChange={(event) => setOfficeId(event.target.value)} disabled={officeLoading || registrationOffices.length === 0} className="input disabled:bg-slate-50"><option value="">{officeLoading ? 'Caricamento uffici...' : registrationOffices.length === 0 ? 'Nessun ufficio disponibile' : 'Seleziona un ufficio...'}</option>{registrationOffices.map((office) => <option key={office.id} value={office.id}>{office.name}</option>)}</select></label>{officeError && <p role="alert" className="rounded-xl bg-red-50 px-3.5 py-3 text-xs leading-5 text-red-700">{officeError}</p>}<div className="grid gap-3 sm:grid-cols-2"><label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Cognome</span><input required value={lastName} onChange={(event) => setLastName(event.target.value)} className="input" placeholder="Cognome" autoComplete="family-name" /></label><label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Nome</span><input required value={firstName} onChange={(event) => setFirstName(event.target.value)} className="input" placeholder="Nome" autoComplete="given-name" /></label></div><label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Indirizzo</span><input required value={address} onChange={(event) => setAddress(event.target.value)} className="input" placeholder="Via, numero civico, città" autoComplete="street-address" /></label><label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Numero di telefono</span><input required type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} className="input" placeholder="+39 000 000 0000" autoComplete="tel" /></label></>}<label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Email</span><span className="relative block"><Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} className="input pl-10" placeholder="nome@ufficio.it" autoComplete="email" /></span></label>{mode !== 'recovery' && <label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Password</span><span className="relative block"><LockKeyhole size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input required minLength={6} type="password" value={password} onChange={(event) => setPassword(event.target.value)} className="input pl-10" placeholder="Almeno 6 caratteri" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} /></span></label>}{message && <p role="alert" className={`rounded-xl px-3.5 py-3 text-xs leading-5 ${mode === 'recovery' && message.includes('Ti abbiamo inviato') ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'}`}>{message}</p>}<button disabled={busy} type="submit" className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60">{busy ? 'Attendi...' : mode === 'login' ? 'Accedi' : mode === 'recovery' ? 'Invia link di recupero' : 'Crea account'} <ArrowRight size={16} /></button><p className="text-center text-xs text-slate-500">{mode === 'login' ? <>Non ricordi la password? <button type="button" onClick={() => { setMessage(''); onModeChange('recovery'); }} className="font-bold text-blue-600 hover:text-blue-800">Recupera password</button><br />Non hai ancora un account? <button type="button" onClick={() => { setMessage(''); onModeChange('signup'); }} className="font-bold text-blue-600 hover:text-blue-800">Registrati</button></> : mode === 'recovery' ? <>Hai ricordato la password? <button type="button" onClick={() => { setMessage(''); onModeChange('login'); }} className="font-bold text-blue-600 hover:text-blue-800">Torna ad Accedi</button></> : <>Hai già un account? <button type="button" onClick={() => { setMessage(''); onModeChange('login'); }} className="font-bold text-blue-600 hover:text-blue-800">Accedi</button></>}</p></form></div>;
 }
 
 function UsersRoles() {
