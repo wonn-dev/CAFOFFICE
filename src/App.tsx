@@ -572,9 +572,9 @@ function UsersRoles() {
   };
 
   const removeMember = async (member: StaffMember) => {
-    if (!window.confirm(`Eliminare ${member.name}?`)) return;
+    if (!window.confirm(`Rimuovere completamente ${member.name} dal sistema? L’utente verrà eliminato dall’ufficio e non potrà più accedere con le sue credenziali.`)) return;
     const { error } = await supabase.rpc('admin_delete_staff_member', { p_member: member.id });
-    if (error) { setErrorMessage('Non è stato possibile eliminare l’utente.'); return; }
+    if (error) { setErrorMessage('Non \u00e8 stato possibile rimuovere l\u2019utente.'); return; }
     setMembers((current) => current.filter((item) => item.id !== member.id));
   };
 
