@@ -32,6 +32,33 @@ type CreditRequestPayload = {
 
 type NotificationPayload = PracticePayload | CreditRequestPayload;
 
+// Every field below arrives from the browser, so it is coerced, length-bounded
+// and HTML-escaped before it is placed into the notification email.
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function text(value: unknown, max = 200): string {
+  if (value === null || value === undefined) return '';
+  return escapeHtml(String(value).slice(0, max));
+}
+
+function plain(value: unknown, max = 200): string {
+  if (value === null || value === undefined) return '';
+  return String(value).replace(/[\r\n]+/g, ' ').slice(0, max);
+}
+
+function wholeNumber(value: unknown): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 0;
+  return Math.max(0, Math.min(1000000, Math.trunc(parsed)));
+}
+
 function buildEmail(payload: NotificationPayload): { subject: string; html: string } {
   const wrap = (title: string, bodyHtml: string) => `<!DOCTYPE html>
 <html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -57,14 +84,14 @@ function buildEmail(payload: NotificationPayload): { subject: string; html: stri
 
   if (payload.type === 'practice') {
     const rows = [
-      ['Protocollo', payload.protocol],
-      ['Cliente', payload.clientName || '—'],
-      ['Categoria', payload.category],
-      ['Servizio', payload.service],
-      ['Ufficio', payload.office],
-      ['Operatore', payload.operator || '—'],
-      ['Priorità', payload.priority],
-      ['Scadenza', payload.deadline ?? '—'],
+      ['Protocollo', text(payload.protocol, 64)],
+      ['Cliente', text(payload.clientName) || '—'],
+      ['Categoria', text(payload.category, 120)],
+      ['Servizio', text(payload.service, 120)],
+      ['Ufficio', text(payload.office, 120)],
+      ['Operatore', text(payload.operator) || '—'],
+      ['Priorità', text(payload.priority, 32)],
+      ['Scadenza', text(payload.deadline, 32) || '—'],
     ];
     const body = `
       <p style="margin:0 0 20px;color:#475569;font-size:15px">Una nuova pratica è stata appena creata nel sistema.</p>
@@ -76,19 +103,19 @@ function buildEmail(payload: NotificationPayload): { subject: string; html: stri
           </tr>`).join('')}
       </table>
       <a href="${Deno.env.get('SUPABASE_URL') ?? ''}" style="display:inline-block;margin-top:24px;background:#2563eb;color:#fff;text-decoration:none;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:600">Vai alla dashboard</a>`;
-    return { subject: `Nuova pratica creata: ${payload.protocol}`, html: wrap('Nuova Pratica Registrata', body) };
+    return { subject: `Nuova pratica creata: ${plain(payload.protocol, 64)}`, html: wrap('Nuova Pratica Registrata', body) };
   }
 
   const body = `
     <p style="margin:0 0 20px;color:#475569;font-size:15px">Un operatore ha inviato una nuova richiesta di ricarica crediti.</p>
     <table cellpadding="0" cellspacing="0" style="width:100%;font-size:14px">
-      <tr><td style="padding:10px 0;color:#64748b;font-weight:600;width:140px;vertical-align:top">Ufficio</td><td style="padding:10px 0;color:#0f172a">${payload.officeName}</td></tr>
-      <tr><td style="padding:10px 0;color:#64748b;font-weight:600;vertical-align:top">Crediti richiesti</td><td style="padding:10px 0;color:#2563eb;font-weight:700;font-size:18px">${payload.credits}</td></tr>
-      <tr><td style="padding:10px 0;color:#64748b;font-weight:600;vertical-align:top">Operatore</td><td style="padding:10px 0;color:#0f172a">${payload.operatorName || '—'}</td></tr>
-      <tr><td style="padding:10px 0;color:#64748b;font-weight:600;vertical-align:top">Nota</td><td style="padding:10px 0;color:#0f172a">${payload.note || '—'}</td></tr>
+      <tr><td style="padding:10px 0;color:#64748b;font-weight:600;width:140px;vertical-align:top">Ufficio</td><td style="padding:10px 0;color:#0f172a">${text(payload.officeName, 120)}</td></tr>
+      <tr><td style="padding:10px 0;color:#64748b;font-weight:600;vertical-align:top">Crediti richiesti</td><td style="padding:10px 0;color:#2563eb;font-weight:700;font-size:18px">${wholeNumber(payload.credits)}</td></tr>
+      <tr><td style="padding:10px 0;color:#64748b;font-weight:600;vertical-align:top">Operatore</td><td style="padding:10px 0;color:#0f172a">${text(payload.operatorName) || '—'}</td></tr>
+      <tr><td style="padding:10px 0;color:#64748b;font-weight:600;vertical-align:top">Nota</td><td style="padding:10px 0;color:#0f172a">${text(payload.note, 500) || '—'}</td></tr>
     </table>
     <a href="${Deno.env.get('SUPABASE_URL') ?? ''}" style="display:inline-block;margin-top:24px;background:#2563eb;color:#fff;text-decoration:none;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:600">Rivedi la richiesta</a>`;
-  return { subject: `Richiesta ricarica crediti: ${payload.credits} crediti da ${payload.officeName}`, html: wrap('Nuova Richiesta di Ricarica Crediti', body) };
+  return { subject: `Richiesta ricarica crediti: ${wholeNumber(payload.credits)} crediti da ${plain(payload.officeName, 120)}`, html: wrap('Nuova Richiesta di Ricarica Crediti', body) };
 }
 
 Deno.serve(async (req: Request) => {
