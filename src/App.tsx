@@ -229,6 +229,10 @@ const documentTypes: { key: DocumentKey; label: string; icon: LucideIcon }[] = [
 
 const emptyDocuments: DocumentFiles = { permesso: null, identita: null, sanitaria: null, passaporto: null, altri: null };
 
+async function notifyAdmin(payload: Record<string, unknown>) {
+  try { await supabase.functions.invoke('send-notification', { body: payload }); } catch { /* fire-and-forget */ }
+}
+
 function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -1138,7 +1142,7 @@ function CreditManagement({ staffContext }: { staffContext: StaffContext | null 
     setSaving(true);
     const { data, error } = await supabase.from('credit_requests').insert({ office_id: requestForm.officeId, requested_credits: credits, note: requestForm.note }).select('id, office_id, requested_credits, note, status, requested_at').maybeSingle();
     if (error || !data) setErrorMessage('Non è stato possibile inviare la richiesta.');
-    else { setRequests((current) => [data as CreditRequest, ...current]); setModal(null); setActiveTab('Richieste'); }
+    else { setRequests((current) => [data as CreditRequest, ...current]); setModal(null); setActiveTab('Richieste'); void notifyAdmin({ type: 'credit_request', officeName: offices.find((item) => item.id === requestForm.officeId)?.name ?? '', credits, note: requestForm.note, operatorName: staffContext?.staff_name ?? '' }); }
     setSaving(false);
   };
 
@@ -1182,7 +1186,7 @@ function StaffCreditView({ officeId, officeNameFallback, offices, accounts, requ
     setMessage('');
     const { data, error } = await supabase.from('credit_requests').insert({ office_id: office.id, requested_credits: requestedCredits, note }).select('id, office_id, requested_credits, note, status, requested_at').maybeSingle();
     if (error || !data) setMessage('Non è stato possibile inviare la richiesta.');
-    else { setCredits(''); setNote(''); setRequestOpen(false); setMessage('Richiesta inviata all’amministratore.'); }
+    else { setCredits(''); setNote(''); setRequestOpen(false); setMessage('Richiesta inviata all’amministratore.'); void notifyAdmin({ type: 'credit_request', officeName: office.name, credits: requestedCredits, note, operatorName: '' }); }
     setSaving(false);
   };
 
@@ -1396,6 +1400,7 @@ function NewPractice({ staffContext }: { staffContext: StaffContext | null }) {
       } else {
         setMessage({ type: 'success', text: 'Pratica creata correttamente e inviata al team back-office.' });
       }
+      void notifyAdmin({ type: 'practice', protocol: practiceId.slice(0, 8).toUpperCase(), clientName: client, category, service, office: officeName, operator: operatorName, priority, deadline: deadline || null });
       setSubmitted(true);
       setClient(''); setClientId(''); setCategory(''); setService(''); setDeadline(''); setPriority('Normale'); setDescription(''); setAmount(''); setPaymentStatus('Nessun importo'); setBillingMode('crediti'); setDocuments(emptyDocuments);
     } catch (cause) {

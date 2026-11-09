@@ -1,0 +1,9 @@
+{
+  "projectId": "72516988",
+  "functions": {
+    "send-notification": {
+      "hasChanged": false,
+      "hash": "f9de9bef12ff262ac0d95f3c88043ee45fb1f0c546de8c7bc60dcc1b09ba6b91"
+    }
+  }
+}
