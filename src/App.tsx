@@ -441,6 +441,8 @@ function AuthForm({ mode, onModeChange, onClose }: { mode: AuthMode; onModeChang
           if (workspaceError) {
             await supabase.auth.signOut();
             setMessage('Non è stato possibile salvare i dati dell’account.');
+          } else {
+            window.location.reload();
           }
         }
       }
