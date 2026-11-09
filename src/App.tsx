@@ -272,10 +272,15 @@ function App() {
     let active = true;
     setRoleLoading(true);
     const loadStaffContext = async () => {
-      const { data, error } = await supabase.rpc('get_current_staff_context_with_permission');
+      let result = await supabase.rpc('get_current_staff_context_with_permission');
+      let context = Array.isArray(result.data) ? result.data[0] : result.data;
+      if ((!context || result.error) && active) {
+        await new Promise((resolve) => window.setTimeout(resolve, 300));
+        result = await supabase.rpc('get_current_staff_context_with_permission');
+        context = Array.isArray(result.data) ? result.data[0] : result.data;
+      }
       if (!active) return;
-      const context = Array.isArray(data) ? data[0] : data;
-      setStaffContext(error || !context ? { role: 'Operatore Ufficio CAF', staff_name: '', office: '', office_id: null, status: '', can_pay_later: false } : {
+      setStaffContext(result.error || !context ? { role: 'Operatore Ufficio CAF', staff_name: '', office: '', office_id: null, status: '', can_pay_later: false } : {
         role: context.role === 'Amministratore' ? 'Amministratore' : 'Operatore Ufficio CAF',
         staff_name: context.staff_name ?? '',
         office: context.office ?? '',
